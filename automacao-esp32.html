@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AgroÁgua — Automação com ESP32</title>
+<link rel="icon" href="data:,">
+<style>
+  /* Paleta AgroÁgua (assets/app.css) mapeada para as variáveis da simulação */
+  :root{
+    --background:#f9fbfa; --foreground:#0b1f18; --card:#ffffff; --border:#e1e9e4;
+    --muted-foreground:#63776e; --primary:#0f6b4f; --primary-foreground:#ffffff;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:"Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif;font-size:14px;line-height:1.5;
+       background:var(--background);color:var(--foreground);-webkit-font-smoothing:antialiased}
+  body.embed{background:transparent;padding:0 !important}
+  body.embed .page-title{display:none}
+  button,input,select{font:inherit;color:inherit;cursor:pointer}
+  button{background:transparent;border:0}
+  h1,h3{margin:0} p{margin:0} ul{margin:0} pre{margin:0;font-family:Consolas,monospace;font-size:13px}
+  table{border-collapse:collapse}
+
+  /* utilitários usados na página (substituem o Tailwind via CDN) */
+  .p-5{padding:1.25rem}.p-4{padding:1rem}.p-3{padding:.75rem}.p-2{padding:.5rem}.p-1{padding:.25rem}
+  .px-3{padding-left:.75rem;padding-right:.75rem}.px-2{padding-left:.5rem;padding-right:.5rem}
+  .py-2{padding-top:.5rem;padding-bottom:.5rem}.py-1\.5{padding-top:.375rem;padding-bottom:.375rem}.py-1{padding-top:.25rem;padding-bottom:.25rem}.py-0\.5{padding-top:.125rem;padding-bottom:.125rem}
+  .pb-2{padding-bottom:.5rem}.pr-2{padding-right:.5rem}.pl-5{padding-left:1.25rem}
+  .ml-1{margin-left:.25rem}.mb-2{margin-bottom:.5rem}.mb-3{margin-bottom:.75rem}.mx-auto{margin-left:auto;margin-right:auto}
+  .max-w-6xl{max-width:72rem}.w-full{width:100%}.h-auto{height:auto}.w-3{width:.75rem}.h-3{height:.75rem}
+  .block{display:block}.inline-block{display:inline-block}.hidden{display:none !important}
+  .flex{display:flex}.flex-wrap{flex-wrap:wrap}.flex-col{flex-direction:column}
+  .items-end{align-items:flex-end}.items-center{align-items:center}.items-stretch{align-items:stretch}
+  .justify-between{justify-content:space-between}
+  .gap-1{gap:.25rem}.gap-2{gap:.5rem}.gap-3{gap:.75rem}.gap-4{gap:1rem}
+  .grid{display:grid;grid-template-columns:minmax(0,1fr)}
+  @media (min-width:768px){.md\:grid-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}.md\:grid-cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}}
+  @media (min-width:1024px){.lg\:grid-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  .space-y-1>*+*{margin-top:.25rem}.space-y-2>*+*{margin-top:.5rem}.space-y-3>*+*{margin-top:.75rem}.space-y-4>*+*{margin-top:1rem}
+  .text-xs{font-size:12px}.text-sm{font-size:13.5px}.text-base{font-size:15px}.text-xl{font-size:20px;line-height:1.3}
+  .font-medium{font-weight:500}.font-semibold{font-weight:650}.text-left{text-align:left}.text-center{text-align:center}
+  .leading-none{line-height:1}.align-top td{vertical-align:top}.overflow-x-auto{overflow-x:auto}.antialiased{-webkit-font-smoothing:antialiased}
+  .list-disc{list-style:disc}
+  .rounded-md{border-radius:8px}.rounded-lg{border-radius:10px}.rounded-xl{border-radius:14px}.rounded-full{border-radius:999px}
+  .border{border:1px solid var(--border)}.border-t{border-top:1px solid var(--border)}
+  .border-\[var\(--border\)\]{border-color:var(--border)}
+  .bg-\[var\(--background\)\]{background:var(--background)}.bg-\[var\(--card\)\]{background:var(--card)}
+  .bg-\[var\(--primary\)\]{background:var(--primary)}.text-\[var\(--primary-foreground\)\]{color:var(--primary-foreground)}
+  .text-\[var\(--foreground\)\]{color:var(--foreground)}.text-\[var\(--muted-foreground\)\]{color:var(--muted-foreground)}
+  .border-amber-500\/60{border-color:rgba(245,158,11,.6)}.bg-amber-500\/10{background:rgba(245,158,11,.1)}
+  .border-emerald-500\/60{border-color:rgba(16,185,129,.6)}.bg-emerald-500\/10{background:rgba(16,185,129,.1)}
+  .border-red-500\/60{border-color:rgba(239,68,68,.6)}.bg-red-500\/10{background:rgba(239,68,68,.1)}
+  .bg-\[var\(--card\)\].border{box-shadow:0 1px 2px rgba(11,31,24,.05)}
+  .tab{color:var(--muted-foreground);font-weight:600}
+  .tab:hover:not(.active){background:#e8f5ee;color:var(--foreground)}
+
+  svg text { fill: var(--foreground); font-size: 13px; }
+  svg text.muted { fill: var(--muted-foreground); font-size: 12px; }
+  .pipe { stroke: var(--muted-foreground); stroke-opacity: .45; stroke-width: 7; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+  .flow { stroke: #38bdf8; stroke-width: 4; fill: none; stroke-dasharray: 8 10; stroke-linecap: round; animation: flow .7s linear infinite; opacity: 0; transition: opacity .3s; }
+  .flow.on { opacity: 1; }
+  .drip { stroke: var(--muted-foreground); stroke-opacity: .55; stroke-width: 2; fill: none; }
+  .dripflow { stroke: #38bdf8; stroke-width: 3; fill: none; stroke-dasharray: 3 9; stroke-linecap: round; animation: flow 1.1s linear infinite; opacity: 0; transition: opacity .3s; }
+  .dripflow.on { opacity: 1; }
+  @keyframes flow { to { stroke-dashoffset: -18; } }
+  .spin { transform-box: fill-box; transform-origin: center; }
+  .spin.on { animation: spin .6s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .wire { fill: none; stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; transition: stroke-width .2s, opacity .2s; }
+  .tab.active { background: var(--primary); color: var(--primary-foreground); }
+  input[type=range] { width: 100%; }
+  /* Acabamento da interface da simulação */
+  :root{--background:#f5f8f6;--border:#e2eae5;--muted-foreground:#63776e;--primary:#0f6b4f}
+  html[lang="zh-CN"] body{font-family:"Microsoft YaHei","PingFang SC","Noto Sans SC","Segoe UI",system-ui,sans-serif}
+  body:not(.embed){font-size:14px;line-height:1.55}
+  button,a,input,select{-webkit-tap-highlight-color:transparent}
+  button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{
+    outline:3px solid rgba(15,107,79,.28);outline-offset:2px
+  }
+  button{transition:background .16s ease,border-color .16s ease,color .16s ease,box-shadow .16s ease,transform .12s ease}
+  button:hover:not(:disabled):not(.tab){filter:brightness(.97)}
+  .tab{border:1px solid transparent;white-space:nowrap}
+  .bg-\[var\(--card\)\]\.border{border-color:#e3ebe6;box-shadow:0 1px 2px rgba(11,31,24,.04),0 3px 12px rgba(11,31,24,.025);transition:border-color .16s ease,box-shadow .16s ease}
+  .bg-\[var\(--card\)\]\.border:hover{border-color:#d5e2da;box-shadow:0 8px 22px rgba(11,31,24,.06)}
+  select{min-height:38px;border-radius:9px}
+  input[type=range]{
+    appearance:none;-webkit-appearance:none;width:100%;height:24px;margin:7px 0 1px;
+    padding:0;border:0;background:transparent;cursor:pointer;vertical-align:middle
+  }
+  input[type=range]::-webkit-slider-runnable-track{
+    height:6px;border:0;border-radius:999px;
+    background:linear-gradient(to right,var(--range-color,#0f6b4f) 0%,var(--range-color,#0f6b4f) var(--range-progress,50%),#dfe7e2 var(--range-progress,50%),#dfe7e2 100%);
+    box-shadow:inset 0 1px 2px rgba(11,31,24,.08)
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none;width:16px;height:16px;margin-top:-5px;border:2px solid #fff;border-radius:50%;
+    background:var(--range-color,#0f6b4f);box-shadow:0 1px 4px rgba(11,31,24,.22)
+  }
+  input[type=range]::-moz-range-track{
+    height:6px;border:0;border-radius:999px;background:#dfe7e2;box-shadow:inset 0 1px 2px rgba(11,31,24,.08)
+  }
+  input[type=range]::-moz-range-progress{height:6px;border-radius:999px;background:var(--range-color,#0f6b4f)}
+  input[type=range]::-moz-range-thumb{
+    width:12px;height:12px;border:2px solid #fff;border-radius:50%;background:var(--range-color,#0f6b4f);
+    box-shadow:0 1px 4px rgba(11,31,24,.22)
+  }
+  input[type=range]:focus-visible{outline:2px solid rgba(15,107,79,.35);outline-offset:3px;border-radius:999px}
+  svg#sim{display:block;border-radius:10px}
+  @media(max-width:700px){
+    body:not(.embed){padding:12px}
+    .max-w-6xl > .flex:first-child{align-items:stretch}
+    .max-w-6xl > .flex:first-child > .flex{justify-content:flex-start;max-width:100%;overflow-x:auto}
+  }
+</style>
+</head>
+<body class="bg-[var(--background)] text-[var(--foreground)] antialiased p-5">
+<div class="max-w-6xl mx-auto space-y-4">
+
+  <div class="flex flex-wrap items-end justify-between gap-3">
+    <div class="page-title">
+      <h1 class="text-xl font-semibold">Irrigação automática: sensores de umidade + ESP32 + válvulas solenoides</h1>
+      <p class="text-sm text-[var(--muted-foreground)]">Simulação acelerada. As abas mostram a visão do campo, a ligação elétrica e a lógica de controle.</p>
+    </div>
+    <div class="flex gap-1 p-1 rounded-lg border border-[var(--border)] bg-[var(--card)]">
+      <button class="tab active px-3 py-1.5 rounded-md text-sm" data-tab="t1">1 · Campo / hidráulica</button>
+      <button class="tab px-3 py-1.5 rounded-md text-sm" data-tab="t2">2 · Ligação elétrica</button>
+      <button class="tab px-3 py-1.5 rounded-md text-sm" data-tab="t3">3 · Lógica e materiais</button>
+    </div>
+  </div>
+
+  <!-- ================= TAB 1 ================= -->
+  <section id="t1" class="space-y-4">
+    <div class="bg-[var(--card)] border border-[var(--border)] rounded-xl p-3">
+      <svg id="sim" viewBox="0 0 1000 560" class="w-full h-auto"></svg>
+    </div>
+
+    <div class="grid md:grid-cols-3 gap-4">
+      <div class="bg-[var(--card)] border border-[var(--border)] rounded-xl p-4 space-y-3">
+        <h3 class="font-semibold">Simulação</h3>
+        <div class="flex flex-wrap gap-2">
+          <button id="btnPlay" class="px-3 py-1.5 rounded-md text-sm bg-[var(--primary)] text-[var(--primary-foreground)]">⏸ Pausar</button>
+          <select id="speed" class="px-2 py-1.5 rounded-md text-sm bg-[var(--background)] border border-[var(--border)]">
+            <option value="1">Velocidade 1×</option>
+            <option value="4" selected>Velocidade 4×</option>
+            <option value="15">Velocidade 15×</option>
+          </select>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <button id="btnRain" class="px-3 py-1.5 rounded-md text-sm border border-[var(--border)]">🌧 Chuva (+25%)</button>
+          <button id="btnFill" class="px-3 py-1.5 rounded-md text-sm border border-[var(--border)]">💧 Encher reservatório</button>
+        </div>
+        <p class="text-sm text-[var(--muted-foreground)]">Os setores secam com o sol e evaporam mais ao meio-dia. Quando um setor fica abaixo do limite, o ESP32 abre a válvula dele e liga a bomba.</p>
+      </div>
+
+      <div class="bg-[var(--card)] border border-[var(--border)] rounded-xl p-4 space-y-3">
+        <h3 class="font-semibold">Umidade do solo (arraste para testar)</h3>
+        <div id="sliders" class="space-y-3"></div>
+      </div>
+
+      <div class="bg-[var(--card)] border border-[var(--border)] rounded-xl p-4 space-y-3">
+        <h3 class="font-semibold">Configuração do controlador</h3>
+        <label class="block text-sm">Liga abaixo de: <b id="lowV">30%</b>
+          <input id="low" type="range" min="10" max="50" value="30" style="--range-color:#ef4444;accent-color:#ef4444"></label>
+        <label class="block text-sm">Desliga acima de: <b id="highV">60%</b>
+          <input id="high" type="range" min="40" max="90" value="60" style="--range-color:#3b82f6;accent-color:#3b82f6"></label>
+        <label class="block text-sm">Tempo máximo por ciclo: <b id="maxRunV">45 min</b>
+          <input id="maxRun" type="range" min="10" max="90" value="45" style="--range-color:#f59e0b;accent-color:#f59e0b"></label>
+        <label class="block text-sm">Válvulas abertas ao mesmo tempo:
+          <select id="maxSim" class="ml-1 px-2 py-1 rounded-md bg-[var(--background)] border border-[var(--border)]">
+            <option value="1" selected>1 (recomendado)</option><option value="2">2</option><option value="3">3</option>
+          </select></label>
+      </div>
+
+      <div class="bg-[var(--card)] border border-[var(--border)] rounded-xl p-4 space-y-3">
+        <h3 class="font-semibold text-red-600">Diagnóstico e Falhas</h3>
+        <p class="text-xs text-[var(--muted-foreground)]">Simule problemas comuns no campo para testar os alertas do sistema.</p>
+        <div class="space-y-2">
+          <button id="btnFailSensor" class="w-full text-left px-3 py-2 rounded-md text-sm border border-[var(--border)] hover:bg-red-50">⚠️ Falha no Sensor S1</button>
+          <button id="btnFailPump" class="w-full text-left px-3 py-2 rounded-md text-sm border border-[var(--border)] hover:bg-red-50">🔥 Sobrecarga na Bomba</button>
+          <button id="btnResetFail" class="w-full text-left px-3 py-2 rounded-md text-sm bg-emerald-500 text-white font-medium hover:bg-emerald-600 hidden">✅ Normalizar Sistema</button>
+        </div>
+        <div id="failMsg" class="text-xs font-bold text-red-600 hidden">SISTEMA EM ESTADO DE ERRO</div>
+      </div>
+    </div>
+
+    <div class="bg-[var(--card)] border border-[var(--border)] rounded-xl p-4">
+      <div class="flex flex-wrap justify-between items-center gap-2 mb-2">
+        <h3 class="font-semibold">Histórico de umidade (últimas 6 h simuladas)</h3>
+        <div id="legendChart" class="flex gap-4 text-sm"></div>
+      </div>
+      <canvas id="chart" class="w-full" style="height:170px"></canvas>
+    </div>
+  </section>
+
+  <!-- ================= TAB 2 ================= -->
+  <section id="t2" class="space-y-4 hidden">
+    <div class="bg-[var(--card)] border border-[var(--border)] rounded-xl p-3">
+      <svg id="wiring" viewBox="0 0 1000 620" class="w-full h-auto"></svg>
+    </div>
+    <div class="grid md:grid-cols-2 gap-4 text-sm">
+      <div class="bg-[var(--card)] border border-[var(--border)] rounded-xl p-4 space-y-2">
+        <h3 class="font-semibold text-base">Pontos importantes</h3>
+        <ul class="list-disc pl-5 space-y-1 text-[var(--muted-foreground)]">
+          <li>Ligue os sensores somente em pinos <b>ADC1</b> (GPIO 32 a 39). O ADC2 não funciona com o Wi-Fi ligado.</li>
+          <li>Alimente os sensores capacitivos com <b>3V3</b> para o sinal não passar de 3,3 V.</li>
+          <li>Ajuste a saída do LM2596 para 5,0 V e confira com multímetro antes de ligar ao VIN; não aplique 12 V diretamente no ESP32.</li>
+          <li>O painel 10 Wp + bateria 12 V/7 Ah é uma estimativa para 1 ESP32 com 3 sensores e Wi-Fi contínuo. Válvulas e bomba não estão incluídas nesse dimensionamento.</li>
+          <li>Coloque um <b>diodo 1N4007</b> em paralelo com cada bobina DC (faixa voltada para o +) para proteger o relé.</li>
+          <li>Os relés acendem em sincronia com a simulação da aba 1.</li>
+        </ul>
+      </div>
+      <div class="bg-[var(--card)] border border-[var(--border)] rounded-xl p-4 space-y-2">
+        <h3 class="font-semibold text-base">Cuidados</h3>
+        <ul class="list-disc pl-5 space-y-1 text-[var(--muted-foreground)]">
+          <li>Muitos módulos relé são <b>ativos em LOW</b> (o relé liga com o pino em 0). Confira no código.</li>
+          <li>Se a bomba for 127/220 V, o relé R4 aciona só a <b>bobina de um contator</b>. A parte de potência deve ser feita por um eletricista, com disjuntor.</li>
+          <li>Use uma caixa IP65, prensa-cabos e cabo blindado nos sensores quando o cabo passar de ~3 m.</li>
+          <li>Todos os GND devem estar interligados (GND comum).</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= TAB 3 ================= -->
+  <section id="t3" class="hidden">
+    <div class="grid lg:grid-cols-2 gap-4">
+      <div class="bg-[var(--card)] border border-[var(--border)] rounded-xl p-4">
+        <h3 class="font-semibold mb-3">Fluxo do programa no ESP32</h3>
+        <div id="flow" class="flex flex-col items-stretch gap-1 text-sm"></div>
+      </div>
+      <div class="space-y-4">
+        <div class="bg-[var(--card)] border border-[var(--border)] rounded-xl p-4">
+          <h3 class="font-semibold mb-3">Lista de materiais (3 setores)</h3>
+          <table class="w-full text-sm">
+            <thead class="text-left text-[var(--muted-foreground)]"><tr><th class="pb-2">Qtd</th><th class="pb-2">Item</th><th class="pb-2">Observação</th></tr></thead>
+            <tbody id="bom" class="align-top"></tbody>
+          </table>
+        </div>
+        <div class="bg-[var(--card)] border border-[var(--border)] rounded-xl p-4 text-sm space-y-2">
+          <h3 class="font-semibold">Calibração do sensor</h3>
+          <p class="text-[var(--muted-foreground)]">Meça o valor do ADC com o sensor <b>no ar</b> (seco, ex.: 3000) e <b>dentro da água</b> (molhado, ex.: 1300). Depois converta:</p>
+          <pre class="bg-[var(--background)] border border-[var(--border)] rounded-md p-2 overflow-x-auto">umidade% = (SECO - leitura) * 100 / (SECO - MOLHADO)</pre>
+          <p class="text-[var(--muted-foreground)]">Repita para cada sensor. Os valores mudam de uma unidade para outra.</p>
+        </div>
+        <div class="bg-[var(--card)] border border-[var(--border)] rounded-xl p-4 text-sm space-y-2">
+          <h3 class="font-semibold">Relatório de Performance (Simulado)</h3>
+          <div id="techReport" class="space-y-2">
+            <div class="flex justify-between"><span>Tempo Total Bomba:</span><b id="repPumpTime">0 min</b></div>
+            <div class="flex justify-between"><span>Volume Total Estimado:</span><b id="repVolume">0 L</b></div>
+            <div class="flex justify-between"><span>Ciclos Completados:</span><b id="repCycles">0</b></div>
+            <div class="flex justify-between"><span>Economia Hídrica:</span><b class="text-emerald-600">~28%</b></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script src="assets/i18n.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const YC = [125, 290, 455];
+const COLORS = ['#10b981', '#f59e0b', '#8b5cf6'];
+const CROPS = ['Alface', 'Tomate', 'Milho'];
+const GPIO_S = [34, 35, 32], GPIO_R = [26, 27, 25, 14];
+const LANG_KEY = 'agroagua_lang';
+const queryLang = new URLSearchParams(location.search).get('lang');
+let LANG = queryLang === 'zh' ? 'zh' : 'pt';
+if (!queryLang) { try { LANG = localStorage.getItem(LANG_KEY) === 'zh' ? 'zh' : 'pt'; } catch (e) { /* storage */ } }
+const tr = text => LANG === 'zh' ? (window.AGRO_I18N?.zh?.[text] || text) : text;
+const trf = (text, ...args) => tr(text).replace(/\{(\d+)\}/g, (_, i) => String(args[i] ?? ''));
+const originalText = new WeakMap();
+let appliedLang = null;
+
+function localizeStaticText() {
+  const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  let node;
+  while ((node = walker.nextNode())) {
+    if (node.parentElement?.closest('script,style')) continue;
+    if (!originalText.has(node)) originalText.set(node, node.nodeValue);
+    const raw = originalText.get(node);
+    const content = raw.trim();
+    if (!content) continue;
+    const start = raw.indexOf(content);
+    node.nodeValue = raw.slice(0, start) + tr(content) + raw.slice(start + content.length);
+  }
+}
+
+function applyAutomationLanguage(lang = LANG) {
+  const next = lang === 'zh' ? 'zh' : 'pt';
+  if (next === appliedLang) return;
+  LANG = next;
+  appliedLang = next;
+  document.documentElement.lang = LANG === 'zh' ? 'zh-CN' : 'pt-BR';
+  document.title = tr('AgroÁgua — Automação com ESP32');
+  buildSim();
+  buildWiring();
+  buildFlow();
+  buildControls();
+  localizeStaticText();
+  render();
+}
+
+const S = {
+  m: [52, 41, 27], open: [false, false, false], run: [0, 0, 0], cool: [0, 0, 0], waiting: [false, false, false],
+  tank: 85, tankLock: false, t: 7 * 60, playing: true, speed: 4,
+  low: 30, high: 60, maxRun: 45, maxSim: 1,
+  evap: [0.12, 0.09, 0.16], hist: [[], [], []],
+  fails: { s1: false, pump: false },
+  stats: { pumpTime: 0, volume: 0, cycles: 0 }
+};
+
+/* ---------------- TAB 1: campo ---------------- */
+function valve(cx, cy, id) {
+  return `<g id="${id}">
+    <line x1="${cx}" y1="${cy}" x2="${cx}" y2="${cy - 14}" stroke="var(--muted-foreground)" stroke-width="2"/>
+    <rect class="vsol" x="${cx - 8}" y="${cy - 24}" width="16" height="10" rx="2" fill="var(--card)" stroke="var(--muted-foreground)" stroke-width="1.5"/>
+    <polygon class="vbody" points="${cx - 15},${cy - 11} ${cx + 15},${cy + 11} ${cx + 15},${cy - 11} ${cx - 15},${cy + 11}" fill="var(--card)" stroke="var(--muted-foreground)" stroke-width="2" stroke-linejoin="round"/>
+  </g>`;
+}
+function soilProbe(x, y, color) {
+  return `<g class="soil-probe" aria-label="${tr('Sonda de umidade')}" pointer-events="none">
+    <rect x="${x - 4}" y="${y - 18}" width="8" height="9" rx="2" fill="var(--card)" stroke="${color}" stroke-width="1.5"/>
+    <circle cx="${x}" cy="${y - 14}" r="1.5" fill="${color}"/>
+    <path d="M${x - 2} ${y - 9} V${y + 12} M${x + 2} ${y - 9} V${y + 12}" stroke="var(--muted-foreground)" stroke-width="1.5" stroke-linecap="round"/>
+  </g>`;
+}
+function buildSim() {
+  let fields = '', pipes = '', flows = '', comps = '';
+  pipes += `<path class="pipe" d="M140 190 H420"/><path class="pipe" d="M420 125 V455"/>`;
+  flows += `<path id="fMain" class="flow" d="M140 190 H420"/>`;
+  YC.forEach((y, i) => {
+    const rows = [-48, -24, 24, 48];
+    let drips = `<path class="drip" d="M545 ${y - 48} V${y + 48}"/>`;
+    let dflow = `M545 ${y} V${y - 48} M545 ${y} V${y + 48}`;
+    let plants = '';
+    rows.forEach(r => {
+      drips += `<path class="drip" d="M545 ${y + r} H955"/>`;
+      dflow += ` M545 ${y + r} H955`;
+      for (let x = 580; x <= 940; x += 40)
+        plants += `<circle class="plant${i}" cx="${x}" cy="${y + r}" r="6" fill="#16a34a" stroke="rgba(0,0,0,.25)"/>`;
+    });
+    const probes = [610, 740, 870].map(x => soilProbe(x, y, COLORS[i])).join('');
+    fields += `
+      <rect id="soil${i}" x="530" y="${y - 65}" width="440" height="130" rx="10" fill-opacity=".55" stroke="var(--border)"/>
+      <text x="530" y="${y - 73}" font-weight="600">${tr('Setor')} ${i + 1} · ${tr(CROPS[i])}</text>
+      <text id="fStat${i}" x="970" y="${y - 73}" text-anchor="end" class="muted">${tr('OK')}</text>
+      ${drips}
+      <path id="fDrip${i}" class="dripflow" d="${dflow}"/>
+      ${probes}
+      ${plants}
+      <rect x="712" y="${y - 10}" width="16" height="10" rx="2" fill="#334155"/>
+      <path d="M716 ${y} V${y + 9} M724 ${y} V${y + 9}" stroke="#94a3b8" stroke-width="2"/>
+      <rect x="734" y="${y - 11}" width="100" height="22" rx="11" fill="${COLORS[i]}" fill-opacity=".22" stroke="${COLORS[i]}"/>
+      <text id="sBadge${i}" x="784" y="${y + 4}" text-anchor="middle" font-weight="600">S${i + 1} · 0%</text>`;
+    pipes += `<path class="pipe" d="M420 ${y} H545"/>`;
+    flows += `<path id="fMan${i}" class="flow" d="M420 190 V${y} H455"/><path id="fBr${i}" class="flow" d="M485 ${y} H545"/>`;
+    comps += valve(470, y, 'v' + i) + `<text x="470" y="${y - 30}" text-anchor="middle" class="muted" font-weight="700">R${i + 1}</text>`;
+  });
+
+  // tanque, bomba, filtro, válvula mestre
+  comps += `
+    <text x="85" y="48" text-anchor="middle" font-weight="600">${tr('Reservatório')}</text>
+    <clipPath id="tankClip"><rect x="33" y="63" width="104" height="144" rx="6"/></clipPath>
+    <rect id="tankWater" x="33" y="63" width="104" height="144" fill="#0ea5e9" fill-opacity=".55" clip-path="url(#tankClip)"/>
+    <rect x="30" y="60" width="110" height="150" rx="8" fill="none" stroke="var(--muted-foreground)" stroke-width="2.5"/>
+    <text id="tankText" x="85" y="232" text-anchor="middle" font-weight="700">85%</text>
+    <text x="85" y="248" text-anchor="middle" class="muted">${tr('sensor de nível')}</text>
+    <rect x="169" y="180" width="29" height="20" rx="4" fill="var(--card)" stroke="var(--muted-foreground)" stroke-width="2.5"/>
+    <path d="M174 183v14m5-14v14m5-14v14m5-14v14" stroke="var(--muted-foreground)" stroke-width="1.2" opacity=".7"/>
+    <path id="pumpBody" d="M198 178 C204 173 214 174 219 180 C226 188 223 199 215 203 C207 207 197 203 193 196 C189 189 191 182 198 178 Z" fill="var(--card)" stroke="var(--muted-foreground)" stroke-width="2.5" stroke-linejoin="round"/>
+    <g id="pumpImp" class="spin">
+      <circle cx="207" cy="191" r="3" fill="var(--muted-foreground)"/>
+      <path d="M207 188c4-5 7-3 6 0-1 2-3 3-6 3m3 0c4 4 2 7-1 6-2-1-3-3-2-6m-1 3c-5 2-7 0-5-3 1-2 4-2 6-1" fill="none" stroke="var(--muted-foreground)" stroke-width="1.8" stroke-linecap="round"/>
+    </g>
+    <text x="200" y="232" text-anchor="middle">${tr('Bomba centrífuga')}</text>
+    <text x="200" y="248" text-anchor="middle" class="muted">R4</text>
+    <rect x="255" y="177" width="30" height="26" rx="3" fill="var(--card)" stroke="var(--muted-foreground)" stroke-width="2"/>
+    <path d="M262 180 V200 M270 180 V200 M278 180 V200" stroke="var(--muted-foreground)" stroke-width="1.5"/>
+    <text x="270" y="232" text-anchor="middle">${tr('Filtro')}</text>
+    ${valve(335, 190, 'vm')}
+    <text x="335" y="150" text-anchor="middle">${tr('Válv. mestre')}</text>`;
+  comps += `${soilProbe(790, 34, '#10b981')}<text x="802" y="38" class="muted" style="font-size:11px">${tr('Sondas de umidade distribuídas')}</text>`;
+
+  // painel de controle
+  let relays = '';
+  const rNames = [tr('Válvula 1'), tr('Válvula 2'), tr('Válvula 3'), tr('Bomba + mestre')];
+  rNames.forEach((n, k) => {
+    const y = 308 + k * 19;
+    relays += `<circle id="rLed${k}" cx="162" cy="${y - 4}" r="5" fill="var(--border)"/>
+      <text x="172" y="${y}" style="font-size:12px">R${k + 1} ${n}</text>
+      <text id="rSt${k}" x="354" y="${y}" text-anchor="end" class="muted" font-weight="700">OFF</text>`;
+  });
+  let sens = '';
+  YC.forEach((_, i) => {
+    const y = 404 + i * 22;
+    sens += `<text x="46" y="${y}" style="font-size:12px">S${i + 1} ${tr(CROPS[i])}</text>
+      <rect x="140" y="${y - 10}" width="170" height="10" rx="5" fill="var(--border)"/>
+      <rect id="pBar${i}" x="140" y="${y - 10}" width="0" height="10" rx="5" fill="${COLORS[i]}"/>
+      <line class="thLow" x1="0" x2="0" y1="${y - 13}" y2="${y + 3}" stroke="#ef4444" stroke-width="2"/>
+      <line class="thHigh" x1="0" x2="0" y1="${y - 13}" y2="${y + 3}" stroke="#3b82f6" stroke-width="2"/>
+      <text id="pVal${i}" x="354" y="${y}" text-anchor="end" font-weight="700" style="font-size:12px">0%</text>`;
+  });
+  comps += `
+    <rect x="30" y="268" width="340" height="262" rx="12" fill="var(--background)" stroke="var(--border)"/>
+    <text x="46" y="290" font-weight="600">${tr('Painel de controle (caixa IP65)')}</text>
+    <text id="clk" x="354" y="290" text-anchor="end" class="muted">07:00</text>
+    <rect x="46" y="300" width="100" height="64" rx="6" fill="#1e293b"/>
+    <text x="96" y="328" text-anchor="middle" font-weight="700" style="fill:#fff">ESP32</text>
+    <text x="96" y="348" text-anchor="middle" style="fill:#cbd5e1;font-size:12px">Wi-Fi · MQTT</text>
+    ${relays}
+    <line x1="46" x2="354" y1="378" y2="378" stroke="var(--border)"/>
+    ${sens}
+    <line x1="46" x2="354" y1="468" y2="468" stroke="var(--border)"/>
+    <text id="ctrlMsg" x="46" y="490" class="muted"></text>
+    <text id="tankMsg" x="46" y="512" style="font-size:12px"></text>`;
+
+  $('sim').innerHTML = `<g>${fields}</g><g>${pipes}</g><g>${flows}</g><g>${comps}</g>`;
+}
+
+/* ---------------- TAB 2: ligação elétrica ---------------- */
+const C = { solar: '#eab308', v12: '#ef4444', v5: '#f97316', v33: '#a855f7', dig: '#3b82f6', ana: '#10b981', gnd: 'var(--muted-foreground)' };
+const gnd = (x, y) => `<path d="M${x} ${y} V${y + 8} M${x - 8} ${y + 8} H${x + 8} M${x - 5} ${y + 11} H${x + 5} M${x - 2} ${y + 14} H${x + 2}" stroke="${C.gnd}" stroke-width="2" fill="none"/>`;
+const tag = (x, y, w, t, col) => `<rect x="${x}" y="${y}" width="${w}" height="18" rx="4" fill="${col}" fill-opacity=".15" stroke="${col}"/><text x="${x + w / 2}" y="${y + 13}" text-anchor="middle" style="font-size:12px;font-weight:700;fill:${col}">${t}</text>`;
+const pin = (x, y) => `<circle cx="${x}" cy="${y}" r="3.5" fill="var(--card)" stroke="var(--foreground)" stroke-width="1.5"/>`;
+const dot = (x, y, c) => `<circle cx="${x}" cy="${y}" r="3.5" fill="${c}"/>`;
+const wire = (d, c, id) => `<path ${id ? `id="${id}"` : ''} class="wire" d="${d}" stroke="${c}"/>`;
+const box = (x, y, w, h) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="10" fill="var(--background)" stroke="var(--muted-foreground)" stroke-width="1.5"/>`;
+
+function buildWiring() {
+  let W = '', P = '', B = '';
+  // Geração e armazenamento solar: painel → controlador → bateria.
+  B += box(25, 20, 150, 90) + `<text x="100" y="42" text-anchor="middle" font-weight="700">${tr('Painel solar 10 Wp')}</text>
+       <path d="M55 53 H145 L138 78 H62 Z M72 53 L68 78 M91 53 L88 78 M110 53 L108 78 M129 53 L127 78 M58 65 H142" fill="none" stroke="${C.solar}" stroke-width="2"/>
+       <text x="100" y="99" text-anchor="middle" class="muted">20 Vmp · 0,5 A</text>`;
+  B += box(210, 20, 160, 90) + `<text x="290" y="55" text-anchor="middle" font-weight="700">${tr('Controlador de carga')}</text>
+       <text x="290" y="78" text-anchor="middle" class="muted">${tr('PWM · sistema 12 V')}</text>`;
+  B += box(410, 20, 150, 90) + `<text x="485" y="55" text-anchor="middle" font-weight="700">${tr('Bateria 12 V')}</text>
+       <text x="485" y="78" text-anchor="middle" class="muted">${tr('7 Ah (estimativa)')}</text>
+       <text x="485" y="98" text-anchor="middle" class="muted">${tr('− no GND comum')}</text>`;
+  B += box(820, 20, 160, 90) + `<text x="900" y="48" text-anchor="middle" font-weight="700">${tr('Estimativa')}</text>
+       <text x="900" y="70" text-anchor="middle">${tr('1 ESP32 + 3 sensores')}</text>
+       <text x="900" y="91" text-anchor="middle" class="muted">${tr('Wi-Fi contínuo')}</text>`;
+  W += wire('M175 54 H210', C.solar) + wire('M175 80 H210', C.gnd);
+  W += wire('M370 54 H410', C.v12) + wire('M370 80 H410', C.gnd);
+  W += wire('M560 54 H800 V435', C.v12) + wire('M560 80 H585 V145 H205 V195 H190', C.gnd);
+  W += wire('M800 118 H210 V180 H190', C.v12);
+  W += tag(735, 27, 52, '+12V', C.v12);
+  P += pin(175, 54) + pin(175, 80) + pin(210, 54) + pin(210, 80) + pin(370, 54) + pin(370, 80) + pin(410, 54) + pin(410, 80) + pin(560, 54) + pin(560, 80) + dot(800, 54, C.v12) + dot(800, 118, C.v12) + dot(205, 145, C.gnd);
+
+  // Conversor regulado: 12 V da bateria para VIN/5 V do ESP32.
+  B += box(30, 160, 160, 80) + `<text x="105" y="184" text-anchor="middle" font-weight="700">${tr('Conversor buck LM2596')}</text><text x="105" y="207" text-anchor="middle" class="muted">${tr('Entrada 12 V → saída 5,0 V')}</text>`;
+  W += wire('M190 210 H260 V195 H300', C.v5) + wire('M260 210 V135 H555 V195 H580', C.v5);
+  W += tag(214, 184, 42, '+5V', C.v5) + wire('M70 240 V242', C.gnd) + gnd(70, 242) + wire('M300 230 H282', C.gnd) + gnd(282, 230);
+  P += pin(190, 180) + pin(190, 195) + pin(190, 210) + pin(70, 240) + pin(300, 195) + dot(800, 203, C.v12) + dot(800, 273, C.v12) + dot(800, 343, C.v12) + dot(800, 413, C.v12) + dot(260, 210, C.v5);
+  // ESP32
+  B += box(300, 150, 170, 310) + `<rect x="355" y="156" width="60" height="12" rx="2" fill="none" stroke="var(--muted-foreground)"/>
+       <path d="M360 162 h6 v-3 h6 v6 h6 v-6 h6 v6 h6 v-3 h12" fill="none" stroke="var(--muted-foreground)"/>
+       <text x="385" y="186" text-anchor="middle" font-weight="700">ESP32 DevKit</text>`;
+  [['VIN', 195], ['GND', 230], ['3V3', 265], ['GPIO34', 330], ['GPIO35', 365], ['GPIO32', 400]].forEach(([n, y]) => { B += `<text x="308" y="${y + 4}" style="font-size:12px">${n}</text>`; P += pin(300, y); });
+  GPIO_R.forEach((g, k) => { const y = 330 + k * 35; B += `<text x="462" y="${y + 4}" text-anchor="end" style="font-size:12px">GPIO${g}</text>`; P += pin(470, y); });
+  W += wire('M300 265 H282', C.v33) + tag(244, 256, 38, '3V3', C.v33);
+  // Sinais para relés
+  GPIO_R.forEach((g, k) => { const y = 330 + k * 35; W += wire(`M470 ${y} H580`, C.dig, 'eSig' + k); });
+  // Módulo relé
+  B += box(580, 150, 160, 310) + `<text x="660" y="174" text-anchor="middle" font-weight="700">Módulo relé 4 canais</text>`;
+  [['VCC', 195], ['GND', 230], ['IN1', 330], ['IN2', 365], ['IN3', 400], ['IN4', 435]].forEach(([n, y]) => { B += `<text x="588" y="${y + 4}" style="font-size:12px">${n}</text>`; P += pin(580, y); });
+  W += wire('M580 230 H565', C.gnd) + gnd(565, 230);
+  const loads = ['Válvula setor 1', 'Válvula setor 2', 'Válvula setor 3', 'Contator bomba'];
+  loads.forEach((name, k) => {
+    const yc = 215 + k * 70;
+    B += `<rect x="643" y="${yc - 12}" width="34" height="24" rx="4" fill="var(--card)" stroke="var(--muted-foreground)"/>
+          <text x="660" y="${yc + 5}" text-anchor="middle" style="font-size:12px" font-weight="700">K${k + 1}</text>
+          <circle id="eLed${k}" cx="690" cy="${yc}" r="5" fill="var(--border)"/>
+          <text x="733" y="${yc - 8}" text-anchor="end" class="muted">COM</text>
+          <text x="733" y="${yc + 16}" text-anchor="end" class="muted">NO</text>`;
+    W += wire(`M740 ${yc - 12} H800`, C.v12);
+    W += wire(`M740 ${yc + 12} H845`, C.v12, 'eNo' + k);
+    W += wire(`M822 ${yc + 12} V${yc - 16} H968 V${yc + 12}`, '#94a3b8');
+    W += wire(`M955 ${yc + 12} H980`, C.gnd) + gnd(980, yc + 12);
+    B += `<polygon points="907,${yc - 23} 907,${yc - 9} 893,${yc - 16}" fill="var(--foreground)"/>
+          <line x1="893" x2="893" y1="${yc - 23}" y2="${yc - 9}" stroke="var(--foreground)" stroke-width="2.5"/>
+          <text x="914" y="${yc - 21}" class="muted">1N4007</text>
+          <rect id="eLoad${k}" x="845" y="${yc - 4}" width="110" height="32" rx="6" fill="var(--card)" stroke="var(--muted-foreground)" stroke-width="1.5"/>
+          <text x="900" y="${yc + 16}" text-anchor="middle" style="font-size:12px">${name}</text>`;
+    P += pin(740, yc - 12) + pin(740, yc + 12) + dot(822, yc + 12, '#94a3b8') + dot(968, yc + 12, '#94a3b8');
+  });
+  // Sensores
+  const X0 = [40, 170, 330];
+  const aPaths = ['M300 330 H255 V470 H115 V520', 'M300 365 H270 V485 H245 V520', 'M300 400 H285 V495 H355 V520'];
+  X0.forEach((x0, i) => {
+    const vcc = i < 2 ? x0 + 25 : x0 + 75, aout = i < 2 ? x0 + 75 : x0 + 25;
+    B += `<rect x="${x0}" y="520" width="100" height="62" rx="8" fill="var(--background)" stroke="${COLORS[i]}" stroke-width="1.5"/>
+          <text x="${vcc}" y="536" text-anchor="middle" class="muted">VCC</text>
+          <text x="${aout}" y="536" text-anchor="middle" class="muted">AOUT</text>
+          <text x="${x0 + 50}" y="556" text-anchor="middle" font-weight="700">Sensor S${i + 1}</text>
+          <text x="${x0 + 50}" y="572" text-anchor="middle" class="muted">capacitivo</text>`;
+    W += wire(`M${vcc} 520 V502`, C.v33) + tag(vcc - 19, 484, 38, '3V3', C.v33) + wire(aPaths[i], C.ana) + gnd(x0 + 50, 582);
+    P += pin(vcc, 520) + pin(aout, 520) + pin(x0 + 50, 582);
+  });
+  // Legenda
+  const leg = [[600, 505, C.solar, tr('Entrada solar (20 V)')], [600, 525, C.v12, tr('+12 V da bateria')], [600, 545, C.v5, tr('5 V regulados')], [770, 505, C.v33, tr('3,3 V')], [770, 525, C.dig, tr('Sinal digital (relé)')], [770, 545, C.ana, tr('Sinal analógico (sensor)')]];
+  B += `<text x="600" y="488" font-weight="700">Legenda</text>`;
+  leg.forEach(([x, y, c, t]) => { B += `<line x1="${x}" x2="${x + 26}" y1="${y - 4}" y2="${y - 4}" stroke="${c}" stroke-width="3"/><text x="${x + 34}" y="${y}" style="font-size:12px">${t}</text>`; });
+  B += gnd(783, 560) + `<text x="804" y="574" style="font-size:12px">${tr('GND comum')}</text>
+       <text x="600" y="590" class="muted">${tr('Rótulos iguais (ex.: +12V, 3V3) indicam o mesmo ponto elétrico.')}</text>
+       <text x="600" y="610" class="muted">${tr('O diodo fica em paralelo com cada bobina (proteção flyback).')}</text>`;
+
+  $('wiring').innerHTML = `<g>${W}</g><g>${B}</g><g>${P}</g>`;
+}
+
+/* ---------------- TAB 3: fluxo + materiais ---------------- */
+function buildFlow() {
+  const step = (t, sub, kind) => {
+    const base = 'rounded-lg border px-3 py-2';
+    const cls = kind === 'q' ? `${base} border-amber-500/60 bg-amber-500/10` : kind === 'a' ? `${base} border-emerald-500/60 bg-emerald-500/10` : kind === 'x' ? `${base} border-red-500/60 bg-red-500/10` : `${base} border-[var(--border)] bg-[var(--background)]`;
+    return `<div class="${cls}"><div class="font-medium">${t}</div>${sub ? `<div class="text-[var(--muted-foreground)]">${sub}</div>` : ''}</div>`;
+  };
+  const arrow = (lbl) => `<div class="text-center text-[var(--muted-foreground)] leading-none py-0.5">↓ ${lbl ? `<span class="text-xs">${lbl}</span>` : ''}</div>`;
+  $('flow').innerHTML = [
+    step('1. setup()', 'Conecta ao Wi-Fi/MQTT, configura os pinos e deixa todos os relés DESLIGADOS'),
+    arrow(),
+    step('2. Ler sensores', 'Média de 10 leituras do ADC por sensor para reduzir ruído'),
+    arrow(),
+    step('3. Converter para %', 'Usa a calibração seco/molhado de cada sensor'),
+    arrow(),
+    step('◇ Nível do reservatório OK?', '<b>Não</b> → desliga a bomba, fecha as válvulas e envia alerta', 'q'),
+    arrow('sim'),
+    step('◇ Para cada setor: umidade < limite inferior?', '<b>Sim</b> → coloca o setor na fila (o mais seco primeiro)', 'q'),
+    arrow(),
+    step('◇ Há vaga? (válvulas abertas < máximo)', '<b>Sim</b> → abre a válvula do setor e depois liga a bomba', 'a'),
+    arrow(),
+    step('◇ Umidade > limite superior OU tempo > máximo?', '<b>Sim</b> → fecha a válvula. Se não sobrou nenhuma aberta, desliga a bomba antes de fechar a última', 'x'),
+    arrow(),
+    step('4. Publicar dados', 'MQTT / Home Assistant / Blynk: umidade, estado das válvulas, nível'),
+    arrow(),
+    step('5. Aguardar ~1 min e voltar ao passo 2', 'Com bateria: use deep sleep entre as leituras')
+  ].join('');
+
+  const bom = [
+    ['1', 'ESP32 DevKit', 'Wi-Fi integrado'],
+    ['3', 'Sensor de umidade capacitivo v1.2', 'Não use resistivo (corrói)'],
+    ['3', 'Válvula solenoide 12 V NF 3/4"', 'Normalmente fechada'],
+    ['1', 'Módulo relé 4 canais (opto)', '3 válvulas + bomba'],
+    ['1', 'Painel solar 10 Wp (20 Vmp)', 'Para 1 ESP32 + 3 sensores; não inclui válvulas/bomba'],
+    ['1', 'Controlador de carga 12 V', 'Entre o painel e a bateria'],
+    ['1', 'Bateria 12 V / 7 Ah', 'Armazenamento para a noite; autonomia varia'],
+    ['1', 'Conversor buck LM2596', '12 V → 5,0 V regulados para VIN'],
+    ['4', 'Diodo 1N4007', 'Flyback nas bobinas'],
+    ['1', 'Bomba / contator', 'Contator se a bomba for AC'],
+    ['1', 'Filtro de disco ou tela', 'Antes das válvulas'],
+    ['1', 'Sensor de nível (boia)', 'Protege a bomba contra rodar a seco'],
+    ['1', 'Caixa IP65 + prensa-cabos', 'Proteção no campo'],
+  ];
+  $('bom').innerHTML = bom.map(r => `<tr class="border-t border-[var(--border)]"><td class="py-1.5 pr-2 font-semibold">${r[0]}</td><td class="py-1.5 pr-2">${r[1]}</td><td class="py-1.5 text-[var(--muted-foreground)]">${r[2]}</td></tr>`).join('');
+}
+
+/* ---------------- Controles ---------------- */
+function syncRangeTrack(input) {
+  const min = Number(input.min || 0), max = Number(input.max || 100), value = Number(input.value || 0);
+  const progress = max > min ? Math.max(0, Math.min(100, (value - min) / (max - min) * 100)) : 0;
+  input.style.setProperty('--range-progress', progress + '%');
+}
+
+function buildControls() {
+  $('sliders').innerHTML = YC.map((_, i) => `
+    <label class="block text-sm"><span style="color:${COLORS[i]}" class="font-semibold">S${i + 1} · ${tr(CROPS[i])}</span> (GPIO${GPIO_S[i]}): <b id="slV${i}">0%</b>
+      <input id="sl${i}" type="range" min="0" max="100" value="0" style="--range-color:${COLORS[i]};accent-color:${COLORS[i]}"></label>`).join('');
+  YC.forEach((_, i) => {
+    const slider = $('sl' + i);
+    syncRangeTrack(slider);
+    slider.addEventListener('input', e => { syncRangeTrack(e.target); S.m[i] = +e.target.value; render(); });
+  });
+  $('legendChart').innerHTML = YC.map((_, i) => `<span class="flex items-center gap-1"><span class="inline-block w-3 h-3 rounded-full" style="background:${COLORS[i]}"></span>S${i + 1}</span>`).join('')
+    + `<span class="flex items-center gap-1 text-[var(--muted-foreground)]">--- limites</span>`;
+
+  $('btnPlay').onclick = () => { S.playing = !S.playing; $('btnPlay').textContent = tr(S.playing ? '⏸ Pausar' : '▶ Continuar'); };
+  $('speed').onchange = e => S.speed = +e.target.value;
+  $('btnRain').onclick = () => { S.m = S.m.map(v => Math.min(100, v + 25)); render(); };
+  $('btnFill').onclick = () => { S.tank = 100; render(); };
+  ['low', 'high', 'maxRun'].forEach(id => syncRangeTrack($(id)));
+  $('low').oninput = e => { syncRangeTrack(e.target); S.low = +e.target.value; if (S.high - S.low < 10) { S.high = S.low + 10; $('high').value = S.high; syncRangeTrack($('high')); } render(); };
+  $('high').oninput = e => { syncRangeTrack(e.target); S.high = +e.target.value; if (S.high - S.low < 10) { S.low = S.high - 10; $('low').value = S.low; syncRangeTrack($('low')); } render(); };
+  $('maxRun').oninput = e => { syncRangeTrack(e.target); S.maxRun = +e.target.value; render(); };
+  $('maxSim').onchange = e => { S.maxSim = +e.target.value; };
+
+  $('btnFailSensor').onclick = () => { S.fails.s1 = true; render(); };
+  $('btnFailPump').onclick = () => { S.fails.pump = true; render(); };
+  $('btnResetFail').onclick = () => { S.fails.s1 = false; S.fails.pump = false; render(); };
+
+  document.querySelectorAll('.tab').forEach(b => b.onclick = () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.toggle('active', x === b));
+    ['t1', 't2', 't3'].forEach(t => $(t).classList.toggle('hidden', t !== b.dataset.tab));
+    render();
+  });
+}
+
+/* ---------------- Simulação ---------------- */
+function step() {
+  if (S.fails.pump) {
+    S.open = [false, false, false];
+    return;
+  }
+  S.t++;
+  const minOfDay = S.t % 1440;
+  const sun = 0.3 + 1.1 * Math.max(0, Math.sin((minOfDay - 360) / 720 * Math.PI));
+  if (S.tank < 10) S.tankLock = true;
+  if (S.tank > 25) S.tankLock = false;
+
+  for (let i = 0; i < 3; i++) {
+    S.m[i] -= S.evap[i] * sun * (0.8 + Math.random() * 0.4);
+    if (S.open[i]) { 
+      S.m[i] += 1.0; 
+      S.run[i]++; 
+      S.stats.volume += 2.5; // litros simulados
+    }
+    if (S.cool[i] > 0) S.cool[i]--;
+    S.m[i] = Math.max(0, Math.min(100, S.m[i]));
+  }
+  for (let i = 0; i < 3; i++) {
+    const moisture = (i === 0 && S.fails.s1) ? 999 : S.m[i]; // Falha no sensor 1
+    if (S.open[i] && (moisture >= S.high || S.run[i] >= S.maxRun || S.tankLock)) {
+      if (S.run[i] >= S.maxRun) S.cool[i] = 20;
+      S.open[i] = false; S.run[i] = 0;
+      S.stats.cycles++;
+    }
+    S.waiting[i] = !S.open[i] && moisture < S.low;
+  }
+  let openCount = S.open.filter(Boolean).length;
+  if (!S.tankLock && openCount < S.maxSim) {
+    const cand = [0, 1, 2].filter(i => {
+      const moisture = (i === 0 && S.fails.s1) ? 999 : S.m[i];
+      return S.waiting[i] && S.cool[i] === 0;
+    }).sort((a, b) => S.m[a] - S.m[b]);
+    cand.slice(0, S.maxSim - openCount).forEach(i => { S.open[i] = true; S.run[i] = 0; S.waiting[i] = false; });
+  }
+  openCount = S.open.filter(Boolean).length;
+  if (openCount > 0) S.stats.pumpTime++;
+  S.tank = Math.max(0, Math.min(100, S.tank - openCount * 0.35 + 0.03));
+  for (let i = 0; i < 3; i++) { S.hist[i].push(S.m[i]); if (S.hist[i].length > 360) S.hist[i].shift(); }
+}
+
+function mix(a, b, t) { return a.map((v, k) => Math.round(v + (b[k] - v) * t)); }
+function setValve(id, on) {
+  const g = $(id); if (!g) return;
+  g.querySelector('.vbody').setAttribute('fill', on ? '#22c55e' : 'var(--card)');
+  g.querySelector('.vsol').setAttribute('fill', on ? '#22c55e' : 'var(--card)');
+}
+
+function render() {
+  const pumpOn = S.open.some(Boolean);
+  const h = 144 * S.tank / 100;
+  $('tankWater').setAttribute('y', 207 - h); $('tankWater').setAttribute('height', h);
+  $('tankText').textContent = Math.round(S.tank) + '%';
+  $('fMain').classList.toggle('on', pumpOn);
+  $('pumpImp').classList.toggle('on', pumpOn);
+  $('pumpBody').setAttribute('stroke', pumpOn ? '#22c55e' : 'var(--muted-foreground)');
+  setValve('vm', pumpOn);
+
+  for (let i = 0; i < 3; i++) {
+    const m = S.m[i], on = S.open[i];
+    setValve('v' + i, on);
+    ['fMan', 'fBr', 'fDrip'].forEach(p => $(p + i).classList.toggle('on', on));
+    const col = mix([214, 180, 130], [84, 56, 32], m / 100);
+    $('soil' + i).setAttribute('fill', `rgb(${col})`);
+    const pc = m < 15 ? '#ca8a04' : m < 25 ? '#84cc16' : '#16a34a';
+    document.querySelectorAll('.plant' + i).forEach(p => p.setAttribute('fill', pc));
+    $('sBadge' + i).textContent = `S${i + 1} · ${Math.round(m)}%`;
+    let st = m >= S.high ? tr('Úmido') : tr('OK');
+    if (on) st = trf('💧 Irrigando · {0} min', S.run[i]);
+    else if (S.waiting[i] && S.tankLock) st = tr('⛔ Bloqueado (reservatório baixo)');
+    else if (S.waiting[i] && S.cool[i] > 0) st = trf('⏳ Pausa de segurança · {0} min', S.cool[i]);
+    else if (S.waiting[i]) st = tr('⏳ Seco · aguardando a vez');
+    $('fStat' + i).textContent = st;
+    $('pBar' + i).setAttribute('width', 170 * m / 100);
+    $('pVal' + i).textContent = Math.round(m) + '%';
+    const sl = $('sl' + i);
+    if (document.activeElement !== sl) sl.value = Math.round(m);
+    syncRangeTrack(sl);
+    $('slV' + i).textContent = Math.round(m) + '%';
+  }
+  document.querySelectorAll('.thLow').forEach(l => { const x = 140 + 170 * S.low / 100; l.setAttribute('x1', x); l.setAttribute('x2', x); });
+  document.querySelectorAll('.thHigh').forEach(l => { const x = 140 + 170 * S.high / 100; l.setAttribute('x1', x); l.setAttribute('x2', x); });
+
+  const relayOn = [...S.open, pumpOn];
+  relayOn.forEach((on, k) => {
+    $('rLed' + k).setAttribute('fill', on ? '#22c55e' : 'var(--border)');
+    $('rSt' + k).textContent = on ? 'ON' : 'OFF';
+    $('rSt' + k).style.fill = on ? '#22c55e' : '';
+    if ($('eLed' + k)) {
+      $('eLed' + k).setAttribute('fill', on ? '#22c55e' : 'var(--border)');
+      $('eSig' + k).style.strokeWidth = on ? 4.5 : 2.5;
+      $('eSig' + k).style.opacity = on ? 1 : .55;
+      $('eNo' + k).style.opacity = on ? 1 : .35;
+      $('eLoad' + k).setAttribute('stroke', on ? '#22c55e' : 'var(--muted-foreground)');
+      $('eLoad' + k).setAttribute('stroke-width', on ? 3 : 1.5);
+    }
+  });
+
+  const mod = S.t % 1440;
+  $('clk').textContent = trf('Hora simulada {0}', `${String(Math.floor(mod / 60)).padStart(2, '0')}:${String(mod % 60).padStart(2, '0')}`);
+  $('ctrlMsg').textContent = trf('Liga < {0}% · Desliga > {1}% · máx {2} min/ciclo', S.low, S.high, S.maxRun);
+  $('tankMsg').textContent = S.tankLock ? trf('⛔ Reservatório {0}%: bomba bloqueada', Math.round(S.tank)) : trf('✔ Reservatório {0}%: nível OK', Math.round(S.tank));
+  $('tankMsg').style.fill = S.tankLock ? '#ef4444' : '';
+  $('lowV').textContent = S.low + '%'; $('highV').textContent = S.high + '%'; $('maxRunV').textContent = S.maxRun + ' ' + tr('min');
+
+  // Falhas e Relatório
+  const hasFail = S.fails.s1 || S.fails.pump;
+  $('btnResetFail').classList.toggle('hidden', !hasFail);
+  $('failMsg').classList.toggle('hidden', !hasFail);
+  if (S.fails.pump) $('failMsg').textContent = tr('ERRO: SOBRECARGA NA BOMBA (R4)');
+  else if (S.fails.s1) $('failMsg').textContent = tr('ERRO: SENSOR S1 EM CURTO (ADC 34)');
+  
+  $('repPumpTime').textContent = S.stats.pumpTime + ' ' + tr('min');
+  $('repVolume').textContent = Math.round(S.stats.volume) + ' ' + tr('L');
+  $('repCycles').textContent = S.stats.cycles;
+
+  drawChart();
+}
+
+function drawChart() {
+  const c = $('chart'); const w = c.clientWidth; if (!w) return;
+  const hgt = 170, dpr = window.devicePixelRatio || 1;
+  c.width = w * dpr; c.height = hgt * dpr;
+  const g = c.getContext('2d'); g.scale(dpr, dpr);
+  const light = true; // AgroÁgua usa tema claro
+  const grid = light ? 'rgba(0,0,0,.1)' : 'rgba(255,255,255,.1)', txt = light ? '#555' : '#aaa';
+  const pl = 38, pr = 8, pt = 8, pb = 10, W = w - pl - pr, H = hgt - pt - pb;
+  g.font = '12px sans-serif'; g.lineWidth = 1;
+  [0, 25, 50, 75, 100].forEach(v => { const y = pt + H - v / 100 * H; g.strokeStyle = grid; g.beginPath(); g.moveTo(pl, y); g.lineTo(pl + W, y); g.stroke(); g.fillStyle = txt; g.fillText(v + '%', 2, y + 4); });
+  g.setLineDash([5, 5]); g.lineWidth = 1.5;
+  [[S.low, '#ef4444'], [S.high, '#3b82f6']].forEach(([v, col]) => { const y = pt + H - v / 100 * H; g.strokeStyle = col; g.beginPath(); g.moveTo(pl, y); g.lineTo(pl + W, y); g.stroke(); });
+  g.setLineDash([]); g.lineWidth = 2;
+  const N = 360;
+  S.hist.forEach((arr, i) => {
+    g.strokeStyle = COLORS[i]; g.beginPath();
+    arr.forEach((v, k) => { const x = pl + (k + N - arr.length) / (N - 1) * W, y = pt + H - v / 100 * H; k ? g.lineTo(x, y) : g.moveTo(x, y); });
+    g.stroke();
+  });
+}
+
+for (let i = 0; i < 3; i++) S.hist[i].push(S.m[i]);
+applyAutomationLanguage(LANG);
+setInterval(() => { if (!S.playing) return; for (let k = 0; k < S.speed; k++) step(); render(); }, 150);
+window.addEventListener('resize', drawChart);
+
+/* ---------------- Integração com o AgroÁgua (index.html) ---------------- */
+const EMBED = new URLSearchParams(location.search).has('embed') || window.self !== window.top;
+if (EMBED) {
+  document.body.classList.add('embed');
+  // informa a altura ao app pai para o iframe não ter barra de rolagem
+  let lastH = 0;
+  const postHeight = () => {
+    const h = Math.ceil(document.body.getBoundingClientRect().height) + 16;
+    if (h !== lastH) { lastH = h; try { parent.postMessage({ type: 'esp32-height', height: h }, '*'); } catch (e) { /* noop */ } }
+  };
+  new ResizeObserver(postHeight).observe(document.body);
+  document.querySelectorAll('.tab').forEach(b => b.addEventListener('click', () => setTimeout(postHeight, 30)));
+  postHeight();
+  // envia um resumo do controlador para o painel do app
+  setInterval(() => {
+    try {
+      parent.postMessage({
+        type: 'esp32-status',
+        sectors: S.m.map((m, i) => ({ name: tr(CROPS[i]), moisture: Math.round(m), open: S.open[i], waiting: S.waiting[i] })),
+        pump: S.open.some(Boolean), tank: Math.round(S.tank), tankLock: S.tankLock
+      }, '*');
+    } catch (e) { /* noop */ }
+  }, 1000);
+  // permite pausar a simulação quando a aba não está visível no app
+  window.addEventListener('message', e => {
+    if (e.data && e.data.type === 'esp32-visibility') S.playing = !!e.data.visible && $('btnPlay').textContent.trim() === tr('⏸ Pausar');
+    if (e.data && e.data.type === 'esp32-language') applyAutomationLanguage(e.data.lang);
+    if (e.data && e.data.type === 'esp32-sync') {
+      if (e.data.lang) applyAutomationLanguage(e.data.lang);
+      if (Array.isArray(e.data.moisture)) S.m = e.data.moisture.map(v => clamp(v, 0, 100));
+      render();
+    }
+  });
+}
+</script>
+</body>
+</html>

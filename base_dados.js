@@ -1,0 +1,191 @@
+/* ============================================================
+   AgroÁgua — base de dados documentada
+   Fontes públicas: IBGE, Seplan-PI, Jucepi/Gov.PI, Embrapa,
+   NASA POWER, Open-Meteo, ANA e FAO-56.
+   ============================================================ */
+window.AGRO_BASE_DADOS = {
+  versao: '2026.1',
+  atualizado: '02/11/2026',
+  indicadores: [
+    {
+      id: 'rural',
+      valor: 245601,
+      labelPt: 'Estabelecimentos rurais no Piauí',
+      labelZh: '皮奥伊州农村经营体',
+      fonte: 'IBGE — Censo Agropecuário 2017 (via Seplan-PI)',
+      ano: '2017',
+      link: 'https://psi.seplan.pi.gov.br/wp-content/uploads/2025/02/um-novo-retrato-da-agricultura-familiar-do-estado-do-piaui.pdf',
+    },
+    {
+      id: 'familia',
+      valor: 197246,
+      labelPt: 'Estabelecimentos de agricultura familiar',
+      labelZh: '家庭农业经营体',
+      fonte: 'IBGE — Censo Agropecuário 2017 (via Seplan-PI)',
+      ano: '2017',
+      link: 'https://psi.seplan.pi.gov.br/wp-content/uploads/2025/02/um-novo-retrato-da-agricultura-familiar-do-estado-do-piaui.pdf',
+    },
+    {
+      id: 'familiaPct',
+      valor: 80.3,
+      sufixo: '%',
+      labelPt: 'Participação da agricultura familiar',
+      labelZh: '家庭农业占比',
+      fonte: 'Cálculo sobre IBGE — Censo Agropecuário 2017',
+      ano: '2017',
+      link: 'https://censoagro2017.ibge.gov.br/',
+    },
+    {
+      id: 'empresas',
+      valor: 276747,
+      labelPt: 'Empresas ativas no Piauí',
+      labelZh: '皮奥伊州活跃企业',
+      fonte: 'Jucepi / Gov.PI — balanço 2023',
+      ano: '2023',
+      link: 'https://www.piauidigital.pi.gov.br/home/piaui-abriu-28-929-empresas-no-ano-de-2023/',
+    },
+    {
+      id: 'mei',
+      valor: 20398,
+      labelPt: 'MEIs formalizados em 2023',
+      labelZh: '2023 年新注册个体微企业（MEI）',
+      fonte: 'Jucepi / Gov.PI — balanço 2023',
+      ano: '2023',
+      link: 'https://www.piauidigital.pi.gov.br/home/piaui-abriu-28-929-empresas-no-ano-de-2023/',
+    },
+    {
+      id: 'microPequenas',
+      valor: 7929,
+      labelPt: 'Micro e pequenas empresas abertas em 2023',
+      labelZh: '2023 年新开微型和小型企业',
+      fonte: 'Jucepi / Gov.PI — 6.771 ME + 1.158 EPP',
+      ano: '2023',
+      link: 'https://www.piauidigital.pi.gov.br/home/piaui-abriu-28-929-empresas-no-ano-de-2023/',
+    },
+  ],
+
+  fontes: [
+    {
+      id: 'ibge',
+      nome: 'IBGE — Censo Agropecuário 2017',
+      tipoPt: 'Estatística oficial',
+      tipoZh: '官方统计',
+      descPt: 'Estabelecimentos agropecuários, agricultura familiar, área, produção e pessoal ocupado.',
+      descZh: '农业经营体、家庭农业、面积、产量和就业人口。',
+      url: 'https://censoagro2017.ibge.gov.br/',
+    },
+    {
+      id: 'seplan',
+      nome: 'Seplan-PI — Agricultura familiar no Piauí',
+      tipoPt: 'Estudo estadual',
+      tipoZh: '州级研究',
+      descPt: 'Recorte do Censo Agro 2017 para os 245.601 estabelecimentos rurais e 197.246 familiares no Piauí.',
+      descZh: '基于 2017 年农业普查，覆盖皮奥伊州 245,601 个农村经营体和 197,246 个家庭农业经营体。',
+      url: 'https://psi.seplan.pi.gov.br/wp-content/uploads/2025/02/um-novo-retrato-da-agricultura-familiar-do-estado-do-piaui.pdf',
+    },
+    {
+      id: 'jucepi',
+      nome: 'Jucepi / Gov.PI — Empresas e MEI',
+      tipoPt: 'Registro público estadual',
+      tipoZh: '州级公共登记',
+      descPt: 'Empresas ativas, MEIs formalizados e abertura de micro e pequenas empresas no Piauí.',
+      descZh: '皮奥伊州活跃企业、新注册 MEI 以及微型和小型企业开业数据。',
+      url: 'https://www.piauidigital.pi.gov.br/home/piaui-abriu-28-929-empresas-no-ano-de-2023/',
+    },
+    {
+      id: 'embrapa-solos',
+      nome: 'Embrapa Solos — SiBCS',
+      tipoPt: 'Pesquisa agropecuária',
+      tipoZh: '农业研究',
+      descPt: 'Classificação de solos, capacidade de campo, ponto de murcha e água disponível por classe textural.',
+      descZh: '土壤分类、田间持水量、凋萎点以及按质地类别划分的可用水。',
+      url: 'https://www.embrapa.br/solos',
+    },
+    {
+      id: 'embrapa-meio-norte',
+      nome: 'Embrapa Meio-Norte',
+      tipoPt: 'Pesquisa agropecuária',
+      tipoZh: '农业研究',
+      descPt: 'Recomendações técnicas para culturas e irrigação no Piauí e no Meio-Norte.',
+      descZh: '面向皮奥伊州和中北部地区的作物与灌溉技术建议。',
+      url: 'https://www.embrapa.br/meio-norte',
+    },
+    {
+      id: 'nasa',
+      nome: 'NASA POWER / MERRA-2',
+      tipoPt: 'Clima e reanálise',
+      tipoZh: '气候与再分析',
+      descPt: 'Climatologia 2001–2025 de chuva, temperatura, radiação, vento e ETo por município.',
+      descZh: '2001–2025 年各城市降雨、温度、辐射、风速和 ETo 气候数据。',
+      url: 'https://power.larc.nasa.gov/',
+    },
+    {
+      id: 'open-meteo',
+      nome: 'Open-Meteo',
+      tipoPt: 'Previsão do tempo',
+      tipoZh: '天气预报',
+      descPt: 'Previsão de até 8 dias para chuva, temperatura e evapotranspiração.',
+      descZh: '最多 8 天的降雨、温度和蒸散预报。',
+      url: 'https://open-meteo.com/',
+    },
+    {
+      id: 'ana',
+      nome: 'ANA — Atlas Irrigação',
+      tipoPt: 'Recursos hídricos',
+      tipoZh: '水资源',
+      descPt: 'Referência para área irrigada, tipologias de irrigação e uso da água no Brasil.',
+      descZh: '巴西灌溉面积、灌溉类型和用水量的参考数据。',
+      url: 'https://www.ana.gov.br/atlasirrigacao/',
+    },
+  ],
+
+  metodo: [
+    {
+      tituloPt: 'Evapotranspiração (ETo)',
+      tituloZh: '蒸散量（ETo）',
+      textoPt: 'ETo diária pelo método FAO-56 Penman-Monteith, com radiação, temperatura, umidade, vento e altitude.',
+      textoZh: '采用 FAO-56 Penman-Monteith 方法，结合辐射、温度、湿度、风速和海拔计算日 ETo。',
+    },
+    {
+      tituloPt: 'Cultura (Kc e raiz)',
+      tituloZh: '作物（Kc 与根深）',
+      textoPt: 'Coeficientes de cultivo, ciclo e profundidade radicular baseados em FAO-56 e recomendações da Embrapa.',
+      textoZh: '作物系数、生育期和根深基于 FAO-56 与 Embrapa 建议。',
+    },
+    {
+      tituloPt: 'Água no solo',
+      tituloZh: '土壤水分',
+      textoPt: 'Capacidade de campo e ponto de murcha por classe textural; lâmina = déficit × profundidade radicular.',
+      textoZh: '按质地类别确定田间持水量和凋萎点；灌水量 = 亏缺 × 根深。',
+    },
+    {
+      tituloPt: 'Sensores',
+      tituloZh: '传感器',
+      textoPt: 'Leituras em 20, 40 e 60 cm, média ponderada (45% / 35% / 20%) e reposição até 45% da água disponível.',
+      textoZh: '20、40、60 厘米读数，加权平均（45% / 35% / 20%），并在可用水降至 45% 时补灌。',
+    },
+    {
+      tituloPt: 'Custo e custo-benefício',
+      tituloZh: '成本与性价比',
+      textoPt: 'Energia, água, manutenção e mão de obra; TCO de 10 anos e score com eficiência (35%), custo (35%) e adequação à cultura (30%).',
+      textoZh: '能源、水费、维护和人工；10 年总成本，评分由效率（35%）、成本（35%）和作物匹配度（30%）组成。',
+    },
+  ],
+
+  notas: [
+    {
+      pt: 'A Embrapa é referência em solos, clima, culturas e manejo da irrigação. Ela não é um cadastro de microempreendedores. Para o recorte de pequenos negócios, usamos IBGE, Jucepi/Gov.PI e Sebrae.',
+      zh: 'Embrapa 是土壤、气候、作物和灌溉管理的权威研究机构，但不是微型企业登记库。小微企业数据来自 IBGE、Jucepi/皮奥伊州政府和 Sebrae。',
+    },
+    {
+      pt: 'Os sensores desta demonstração são simulados. Em produção, as leituras devem vir do gateway de campo com calibração por tipo de solo.',
+      zh: '本演示中的传感器为模拟数据。生产环境中应由田间网关提供读数，并按土壤类型校准。',
+    },
+    {
+      pt: 'Os valores de investimento, eficiência e custo são referências típicas de literatura e devem ser confirmados com orçamento local e assistência técnica.',
+      zh: '投资、效率和成本为文献中的典型参考值，应通过当地报价和技术指导确认。',
+    },
+  ],
+};
+
+/* Versão JSON para integração/inspeção (mantida em dados/base_dados.json). */
