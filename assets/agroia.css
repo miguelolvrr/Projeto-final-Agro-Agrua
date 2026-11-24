@@ -1,0 +1,16 @@
+.agroia-toggle{position:fixed;right:22px;bottom:22px;z-index:5000;border:0;border-radius:28px;padding:14px 23px;background:#0b4938;color:#fff;box-shadow:0 4px 20px #0003;font:700 16px inherit;cursor:pointer}
+.agroia-panel{position:fixed;right:22px;bottom:82px;z-index:5001;width:min(400px,calc(100vw - 24px));height:min(550px,calc(100dvh - 110px));display:flex;flex-direction:column;background:#fff;border:1px solid #cadbd2;border-radius:18px;box-shadow:0 12px 48px #0003;color:#173d2c;font-family:inherit;overflow:hidden}
+.agroia-panel[hidden]{display:none}
+.agroia-head{display:flex;align-items:center;gap:12px;padding:15px 18px;background:#0b4938;color:white}
+.agroia-head h2{margin:0;font-size:20px;color:inherit}.agroia-head p{margin:3px 0 0;font-size:13px;color:#d1ecdf}
+.agroia-close{margin-left:auto;border:0;background:transparent;color:white;cursor:pointer;font-size:26px;padding:6px}
+.agroia-log{flex:1;overflow:auto;padding:16px;display:flex;flex-direction:column;gap:12px}
+.agroia-message{margin:0;background:#edf4ef;padding:11px 13px;border-radius:12px;max-width:94%;font-size:15px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere}
+.agroia-message.user{align-self:flex-end;background:#0b4938;color:#fff}
+.agroia-status{margin:0;padding:0 16px;font-size:13px;line-height:1.4;color:#794316;overflow-wrap:anywhere}
+.agroia-form{padding:12px 16px 16px;border-top:1px solid #e0e9e3;display:grid;gap:8px}
+.agroia-form label{font-size:14px;font-weight:600}.agroia-form textarea{width:100%;box-sizing:border-box;resize:vertical;min-height:64px;max-height:120px;border:1px solid #b6cdbf;border-radius:10px;padding:10px;font:inherit;font-size:16px;color:#173d2c;background:white}
+.agroia-actions{display:flex;justify-content:space-between;gap:10px}.agroia-actions button{border:1px solid #b6cdbf;border-radius:9px;background:#fff;color:#173d2c;padding:9px 14px;font-family:inherit;font-size:14px;cursor:pointer}.agroia-actions button[type=submit]{background:#0b4938;color:#fff}.agroia-actions button:disabled{opacity:.6;cursor:wait}
+.agroia-panel :focus-visible,.agroia-toggle:focus-visible{outline:3px solid #57bb8c;outline-offset:2px}
+@media(max-width:520px){.agroia-panel{right:12px;bottom:76px}.agroia-toggle{right:12px;bottom:16px}}
+@media print{.agroia-panel,.agroia-toggle{display:none!important}}
