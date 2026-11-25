@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AgroÁgua — Irrigação de precisão</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="app.css">
+<link rel="stylesheet" href="saas.css">
+<link rel="stylesheet" href="agroia.css">
+</head>
+<body>
+<script src="municipios_pi.js"></script>
+<script src="base_dados.js"></script>
+<script src="i18n.js"></script>
+<script src="database.js"></script>
+<script src="saas.js"></script>
+<script>
+(function () {
+  if (!location.hash) {
+    try { history.replaceState(null, '', location.pathname + location.search + '#overview'); }
+    catch (error) { location.hash = 'overview'; }
+  }
+  try {
+    const key = 'agroagua_saas_demo_session';
+    const current = JSON.parse(localStorage.getItem(key) || 'null');
+    if (!current || !current.exp || current.exp <= Date.now()) {
+      localStorage.setItem(key, JSON.stringify({ username: 'agricultor', exp: Date.now() + 8 * 60 * 60 * 1000 }));
+    }
+  } catch (error) {}
+})();
+</script>
