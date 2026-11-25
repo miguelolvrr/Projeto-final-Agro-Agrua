@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AgroÁgua — Irrigação de precisão</title>
+<meta name="description" content="SaaS de irrigação de precisão para pequenos e médios produtores: sensores de solo, recomendação de irrigação e melhor custo-benefício por cultura.">
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="css/saas.css">
+<link rel="stylesheet" href="css/agroia.css">
+</head>
+<body>
+
+<section class="auth-screen" id="authScreen" aria-labelledby="authTitle">
+  <div class="auth-orbit auth-orbit-one"></div>
+  <div class="auth-orbit auth-orbit-two"></div>
+  <div class="auth-layout">
+    <aside class="auth-story">
+      <a class="auth-brand" href="#" aria-label="AgroÁgua">
+        <span class="auth-brand-mark"><svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><path d="M24 5c7.8 9.1 13 15.8 13 23a13 13 0 1 1-26 0C11 20.8 16.2 14.1 24 5Z" fill="currentColor"/><path d="M18.5 29.5c.7 3.1 2.7 5 5.5 5.5" stroke="#0b4938" stroke-width="2.2" stroke-linecap="round"/></svg></span>
+        <span>AgroÁgua<small>Piauí · irrigação inteligente</small></span>
+      </a>
+      <div class="auth-story-copy">
+        <span class="auth-kicker"><i></i><span data-i18n="Tecnologia feita para o campo">Tecnologia feita para o campo</span></span>
+        <h2 data-i18n="Cada gota no momento certo.">Cada gota no momento certo.</h2>
+        <p data-i18n="Acompanhe sua lavoura, entenda a umidade do solo e planeje a irrigação com mais confiança.">Acompanhe sua lavoura, entenda a umidade do solo e planeje a irrigação com mais confiança.</p>
+      </div>
+      <div class="auth-field-art" aria-hidden="true">
+        <div class="auth-sun"></div><div class="auth-hill auth-hill-back"></div><div class="auth-hill auth-hill-front"></div>
+        <div class="auth-row auth-row-a"></div><div class="auth-row auth-row-b"></div><div class="auth-row auth-row-c"></div>
+        <div class="auth-plant auth-plant-a"><i></i><b></b></div><div class="auth-plant auth-plant-b"><i></i><b></b></div><div class="auth-plant auth-plant-c"><i></i><b></b></div>
+        <span class="auth-water auth-water-a"></span><span class="auth-water auth-water-b"></span><span class="auth-water auth-water-c"></span>
+      </div>
+      <div class="auth-story-foot"><span data-i18n="Clima, solo e manejo em um só lugar.">Clima, solo e manejo em um só lugar.</span><span>224 municípios do Piauí</span></div>
+    </aside>
+
+    <main class="auth-main">
+      <button class="auth-language" id="authLangBtn" type="button" aria-label="Mudar idioma">PT <span>·</span> 中文</button>
+      <div class="auth-card" id="authCard">
+        <div class="auth-mobile-brand"><span class="auth-brand-mark"><svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><path d="M24 5c7.8 9.1 13 15.8 13 23a13 13 0 1 1-26 0C11 20.8 16.2 14.1 24 5Z" fill="currentColor"/></svg></span><span>AgroÁgua</span></div>
+        <div class="auth-heading">
+          <span class="auth-eyebrow" data-i18n="BEM-VINDO AO AGROÁGUA">BEM-VINDO AO AGROÁGUA</span>
+          <h1 id="authTitle" data-i18n="Entre na sua conta">Entre na sua conta</h1>
+          <p data-i18n="Escolha um perfil de demonstração ou informe seu acesso.">Escolha um perfil de demonstração ou informe seu acesso.</p>
+        </div>
+
+        <div class="auth-demo-label"><span data-i18n="ACESSOS RÁPIDOS">ACESSOS RÁPIDOS</span><i></i></div>
+        <div class="auth-accounts" id="authAccounts" role="group" aria-label="Perfis de acesso rápido">
+          <button class="auth-account selected" type="button" data-demo-user="admin" aria-pressed="true">
+            <span class="auth-account-icon admin-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4.5 6v5.5c0 4.5 3.2 7.8 7.5 9.5 4.3-1.7 7.5-5 7.5-9.5V6L12 3Z"/><path d="m9 12 2 2 4-4"/></svg></span>
+            <span class="auth-account-info"><strong data-i18n="Administrador">Administrador</strong><small><span data-i18n="Usuário">Usuário</span> <b>admin</b> <span class="auth-credential-dot">·</span> <span data-i18n="Senha">Senha</span> <b>2026</b></small></span>
+            <span class="auth-radio"></span>
+          </button>
+          <button class="auth-account" type="button" data-demo-user="agricultor" aria-pressed="false">
+            <span class="auth-account-icon farmer-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 4c-8 .2-13 3.8-13 10a6 6 0 0 0 6 6c6.2 0 9.8-5 10-13l-3 3"/><path d="M4 21c2-4 5-7 10-10"/></svg></span>
+            <span class="auth-account-info"><strong data-i18n="Agricultor">Agricultor</strong><small><span data-i18n="Usuário">Usuário</span> <b>agricultor</b> <span class="auth-credential-dot">·</span> <span data-i18n="Senha">Senha</span> <b>2026</b></small></span>
+            <span class="auth-radio"></span>
+          </button>
+        </div>
+
+        <form id="authForm" class="auth-form" novalidate>
+          <div class="auth-error" id="authError" role="alert" aria-live="polite" data-i18n="Usuário ou senha inválidos. Confira os dados e tente novamente.">Usuário ou senha inválidos. Confira os dados e tente novamente.</div>
+          <label for="authUser" data-i18n="Usuário">Usuário</label>
+          <div class="auth-input-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/></svg><input id="authUser" name="username" type="text" value="admin" autocomplete="username" spellcheck="false" required></div>
+          <div class="auth-password-label"><label for="authPass" data-i18n="Senha">Senha</label><span data-i18n="Acesso de demonstração">Acesso de demonstração</span></div>
+          <div class="auth-input-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2.5"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><input id="authPass" name="password" type="password" value="2026" autocomplete="current-password" required><button class="auth-reveal" id="authReveal" type="button" aria-label="Mostrar senha" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 12s3.3-6 9.5-6 9.5 6 9.5 6-3.3 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.5"/></svg></button></div>
+          <button class="auth-submit" type="submit"><span data-i18n="Entrar no painel">Entrar no painel</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h15m0 0-6-6m6 6-6 6"/></svg></button>
+        </form>
+
+        <div class="auth-security"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2.5"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><span data-i18n="Demonstração local. Os acessos ficam salvos apenas neste navegador.">Demonstração local. Os acessos ficam salvos apenas neste navegador.</span></div>
+        <button class="auth-register-link" id="showRegisterBtn" type="button"><span data-i18n="Não tem conta?">Não tem conta?</span> <strong data-i18n="Cadastre sua fazenda">Cadastre sua fazenda</strong><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h15m0 0-6-6m6 6-6 6"/></svg></button>
+      </div>
+      <div class="auth-registration" id="authRegistration" hidden>
+        <button class="auth-back" id="backToLogin" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12H5m0 0 6 6m-6-6 6-6"/></svg><span data-i18n="Voltar ao login">Voltar ao login</span></button>
+        <div class="auth-heading register-heading"><span class="auth-eyebrow" data-i18n="CADASTRO DO AGRICULTOR">CADASTRO DO AGRICULTOR</span><h1 data-i18n="Cadastre sua fazenda">Cadastre sua fazenda</h1><p data-i18n="Crie seu acesso e informe onde ficam suas plantações.">Crie seu acesso e informe onde ficam suas plantações.</p></div>
+        <form id="registerForm" class="register-form" novalidate>
+          <div class="auth-error" id="registerError" role="alert" aria-live="polite"></div>
+          <div class="register-grid">
+            <div class="register-field register-wide"><label for="registerName" data-i18n="Seu nome">Seu nome</label><input id="registerName" type="text" autocomplete="name" maxlength="80" required></div>
+            <div class="register-field"><label for="registerFarm" data-i18n="Nome da fazenda">Nome da fazenda</label><input id="registerFarm" type="text" maxlength="80" placeholder="Ex.: Sítio Boa Vista" data-i18n-placeholder="Ex.: Sítio Boa Vista" required></div>
+            <div class="register-field"><label for="registerCity" data-i18n="Município">Município</label><select id="registerCity" required></select></div>
+            <div class="register-field register-wide"><label for="registerCommunity"><span data-i18n="Povoado ou comunidade">Povoado ou comunidade</span> <small data-i18n="opcional">opcional</small></label><input id="registerCommunity" type="text" maxlength="80" placeholder="Ex.: Povoado Lagoa Nova" data-i18n-placeholder="Ex.: Povoado Lagoa Nova"></div>
+            <div class="register-field register-wide"><label for="registerTreatment" data-i18n="Forma de tratamento no painel">Forma de tratamento no painel</label><select id="registerTreatment"><option value="produtor(a)" selected data-i18n="Produtor(a)">Produtor(a)</option><option value="produtor" data-i18n="Produtor">Produtor</option><option value="produtora" data-i18n="Produtora">Produtora</option></select></div>
+            <div class="register-field"><label for="registerUsername" data-i18n="Crie um usuário">Crie um usuário</label><input id="registerUsername" type="text" autocomplete="username" minlength="3" maxlength="24" spellcheck="false" placeholder="Ex.: maria.silva" data-i18n-placeholder="Ex.: maria.silva" required></div>
+            <div class="register-field"><label for="registerPassword" data-i18n="Crie uma senha">Crie uma senha</label><input id="registerPassword" type="password" autocomplete="new-password" minlength="6" required></div>
+          </div>
+
+          <div class="register-plantings-head"><div><h2 data-i18n="Suas plantações">Suas plantações</h2><p data-i18n="Adicione cada cultivo que deseja acompanhar.">Adicione cada cultivo que deseja acompanhar.</p></div><button class="register-add" id="addPlanting" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span data-i18n="Adicionar">Adicionar</span></button></div>
+          <div class="register-planting-list" id="registerPlantings"></div>
+          <button class="auth-submit register-submit" type="submit"><span data-i18n="Criar conta e acessar">Criar conta e acessar</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h15m0 0-6-6m6 6-6 6"/></svg></button>
+        </form>
+        <div class="auth-security"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2.5"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><span data-i18n="Cadastro de demonstração salvo neste navegador.">Cadastro de demonstração salvo neste navegador.</span></div>
+      </div>
+      <div class="auth-main-foot"><span>AgroÁgua SaaS · Piauí</span><span data-i18n="Irrigação de precisão para quem produz.">Irrigação de precisão para quem produz.</span></div>
+    </main>
+  </div>
+</section>
+
+<svg style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true">
+  <symbol id="i-grid" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></symbol>
+  <symbol id="i-calc" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2.5" width="14" height="19" rx="2.5"/><path d="M8.5 7h7M8.5 12h.01M12 12h.01M15.5 12h.01M8.5 16h.01M12 16h.01M15.5 16h.01"/></symbol>
+  <symbol id="i-layers" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5"/><path d="m3 16 9 5 9-5"/></symbol>
+  <symbol id="i-database" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5.5" rx="8" ry="3.2"/><path d="M4 5.5v6c0 1.8 3.6 3.2 8 3.2s8-1.4 8-3.2v-6"/><path d="M4 11.5v6c0 1.8 3.6 3.2 8 3.2s8-1.4 8-3.2v-6"/></symbol>
+  <symbol id="i-calendar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2.5"/><path d="M8 3v4M16 3v4M3 10h18"/></symbol>
+  <symbol id="i-cloud" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19a4.5 4.5 0 0 0 .4-9A6 6 0 0 0 6.3 9.5 4 4 0 0 0 7 17.5"/><path d="M12 12v6M9.5 15.5 12 18l2.5-2.5"/></symbol>
+  <symbol id="i-chart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 5 6v5c0 5 3 8.5 7 10 4-1.5 7-5 7-10V6l-7-3Z"/><path d="m9 12 2 2 4-4"/></symbol>
+  <symbol id="i-settings" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></symbol>
+  <symbol id="i-pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.7"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 21h16"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 15h10l1-15M10 11v6M14 11v6"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 4 4L19 6"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2.8 19h18.4L12 3Z"/><path d="M12 9v5M12 17.5h.01"/></symbol>
+  <symbol id="i-arrow-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h16m0 0-6-6m6 6-6 6"/></symbol>
+  <symbol id="i-arrow-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12H4m0 0 6-6m-6 6 6 6"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 1 0-2.3 6.3M20 5v6h-6"/></symbol>
+  <symbol id="i-drop" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c4 4.6 6 8 6 10.8A6 6 0 0 1 6 13.8C6 11 8 7.6 12 3Z"/></symbol>
+  <symbol id="i-leaf" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20c0-8 5-14 16-16 0 10-5 15-12 15-2 0-4-1-4-1Z"/><path d="M4 20c2-5 6-8 11-10"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M19.1 4.9l-1.4 1.4M6.3 17.7l-1.4 1.4"/></symbol>
+  <symbol id="i-map" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9 4-6 2v14l6-2 6 2 6-2V4l-6 2-6-2Z"/><path d="M9 4v14M15 6v14"/></symbol>
+  <symbol id="i-history" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7M3 4v5h5"/><path d="M12 7v5l3 2"/></symbol>
+  <symbol id="i-sliders" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h10M18 18h2"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="16" cy="18" r="2"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7h.01"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2.5"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></symbol>
+  <symbol id="i-print" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="7" rx="1"/></symbol>
+  <symbol id="i-wifi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 8.5a15 15 0 0 1 19 0M5.5 12a10.5 10.5 0 0 1 13 0M8.5 15.5a6 6 0 0 1 7 0"/><circle cx="12" cy="19" r="1" fill="currentColor"/></symbol>
+  <symbol id="i-battery" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="17" height="10" rx="2"/><path d="M22 10v4"/><path d="M5 10h8v4H5z" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-money" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="12" rx="2.5"/><circle cx="12" cy="12" r="2.6"/><path d="M6 9v6M18 9v6"/></symbol>
+  <symbol id="i-chip" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="6" width="12" height="12" rx="2"/><rect x="9.5" y="9.5" width="5" height="5" rx="1"/><path d="M9 2.5V6M15 2.5V6M9 18v3.5M15 18v3.5M2.5 9H6M2.5 15H6M18 9h3.5M18 15h3.5"/></symbol>
+</svg>
+
+<div class="app auth-locked" id="app" aria-hidden="true">
+
+  <!-- ================= SIDEBAR ================= -->
+  <aside class="sidebar" id="sidebar" aria-label="Navegação principal">
+    <div class="brand">
+      <svg viewBox="0 0 48 48" fill="none" aria-hidden="true">
+        <rect width="48" height="48" rx="13" fill="#08382b"/>
+        <path d="M24 10c5.5 6.2 8.5 11 8.5 15.4A8.5 8.5 0 0 1 24 34a8.5 8.5 0 0 1-8.5-8.6C15.5 21 18.5 16.2 24 10Z" fill="#7fe0b0"/>
+        <path d="M24 20c2.6 2.9 3.9 5.1 3.9 7.1a3.9 3.9 0 0 1-7.8 0c0-2 1.3-4.2 3.9-7.1Z" fill="#08382b"/>
+        <path d="M30 36c3-1.2 5.4-3.2 7-6" stroke="#7fe0b0" stroke-width="2.2" stroke-linecap="round"/>
+      </svg>
+      <div class="brand-name">AgroÁgua<span data-i18n="SaaS de irrigação">SaaS de irrigação</span></div>
+    </div>
+
+    <nav class="nav">
+      <div class="nav-group">
+        <span class="nav-label" data-i18n="Operação">Operação</span>
+        <button class="nav-btn active" data-route="automation"><svg><use href="#i-chip"/></svg><span data-i18n="Automação ESP32">Automação ESP32</span></button>
+        <button class="nav-btn" data-route="overview"><svg><use href="#i-grid"/></svg><span data-i18n="Visão geral">Visão geral</span></button>
+        <button class="nav-btn" data-route="calculator"><svg><use href="#i-calc"/></svg><span data-i18n="Calculadora">Calculadora</span></button>
+      </div>
+      <div class="nav-group">
+        <span class="nav-label" data-i18n="Análise">Análise</span>
+        <button class="nav-btn" data-route="data"><svg><use href="#i-database"/></svg><span data-i18n="Base de dados">Base de dados</span></button>
+      </div>
+      <div class="nav-group" id="adminNavGroup" hidden>
+        <span class="nav-label" data-i18n="Gestão">Gestão</span>
+        <button class="nav-btn" data-route="admin"><svg><use href="#i-shield"/></svg><span data-i18n="Agricultores e fazendas">Agricultores e fazendas</span></button>
+      </div>
+    </nav>
+
+    <div class="sidebar-foot">
+      <div class="side-city">
+        <div class="k" data-i18n="Município ativo">Município ativo</div>
+        <div class="v" id="sideCityName">Teresina</div>
+        <div class="m" id="sideCityMeta">PI · 866.300 hab</div>
+      </div>
+      <div class="plan-card" id="planCard"></div>
+      <div class="side-version"><span>v3.0 · 2026</span><span data-i18n="demo SaaS">demo SaaS</span></div>
+    </div>
+  </aside>
+  <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+  <div class="main">
+    <!-- ================= TOPBAR ================= -->
+    <header class="topbar">
+      <button class="menu-btn" id="menuBtn" aria-label="Abrir menu"><svg width="18" height="18"><use href="#i-menu"/></svg></button>
+      <div class="crumb">
+        <span class="eyebrow" id="pageEyebrow">Operação</span>
+        <strong id="pageTitle">Visão geral</strong>
+      </div>
+      <div class="top-actions">
+        <button class="lang-btn" id="langBtn" title="Idioma / 语言">PT</button>
+        <button class="city-btn" id="cityBtn" title="Trocar município">
+          <svg><use href="#i-pin"/></svg>
+          <span class="name" id="cityBtnName">Teresina</span>
+          <span class="uf">PI</span>
+          <svg class="chev"><use href="#i-chev"/></svg>
+        </button>
+        <div class="weather-pill" id="weatherPill"><span class="dot"></span><span class="label" id="weatherLabel">Clima</span><span class="temp" id="weatherTemp">—</span></div>
+        <button class="user-btn" id="userBtn" title="Planos e conta">
+          <span class="user-avatar">P</span>
+          <span class="meta"><span class="role" id="userRole">Plano Produtor</span><span class="nm" id="userName">Fazenda Boa Vista</span></span>
+        </button>
+        <button class="auth-logout" id="logoutBtn" type="button" title="Sair da conta" aria-label="Sair da conta"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 17l5-5-5-5M15 12H3"/><path d="M12 3h5a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-5"/></svg></button>
+      </div>
+    </header>
+
+    <main class="content" id="content">
+
+      <!-- ============================================================
+           VISÃO GERAL
+           ============================================================ -->
+      <section class="view" id="view-overview">
+        <div class="page-head">
+          <div>
+            <div class="eyebrow" data-i18n="Painel do produtor">Painel do produtor</div>
+            <h1 id="ovTitle">Visão geral</h1>
+            <p class="sub" id="ovSub">Sensores de solo, previsão do tempo e recomendação de irrigação em um só lugar.</p>
+          </div>
+          <div class="page-actions">
+            <span class="data-version" id="ovDate"></span>
+            <button class="btn btn-ghost" id="printDashboard"><svg><use href="#i-print"/></svg><span data-i18n="Imprimir">Imprimir</span></button>
+            <button class="btn btn-secondary" id="refreshSensors"><svg><use href="#i-refresh"/></svg><span data-i18n="Atualizar sensores">Atualizar sensores</span></button>
+            <button class="btn btn-primary" data-route="calculator"><svg><use href="#i-calc"/></svg><span data-i18n="Calcular irrigação">Calcular irrigação</span></button>
+          </div>
+        </div>
+
+        <div id="ovAlert"></div>
+        <div id="planUpsell"></div>
+
+        <div class="grid g5" id="ovKpis"></div>
+
+        <div class="grid overview-main mt14">
+          <div class="card">
+            <div class="card-head">
+              <div><h2 data-i18n="Recomendação de irrigação">Recomendação de irrigação</h2><p data-i18n="Baseada na umidade do solo, cultura e clima local">Baseada na umidade do solo, cultura e clima local</p></div>
+              <span class="badge green"><span class="dot"></span><span data-i18n="Sensores online">Sensores online</span></span>
+            </div>
+            <div class="card-body" id="recHero"></div>
+            <div class="rec-list" id="recList"></div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <div><h2 data-i18n="Saúde do solo">Saúde do solo</h2><p id="soilAreaName" data-i18n="Selecione uma área">Selecione uma área</p></div>
+              <span class="badge" id="soilStatus">—</span>
+            </div>
+            <div class="card-body" id="soilBody"></div>
+          </div>
+        </div>
+
+        <div class="grid dash-three mt14">
+          <div class="card">
+            <div class="card-head">
+              <div><h2 data-i18n="Tendência de umidade">Tendência de umidade</h2><p id="trendSub" data-i18n="Projeção de 7 dias">Projeção de 7 dias</p></div>
+              <span class="badge blue" data-i18n="7 dias">7 dias</span>
+            </div>
+            <div class="card-body" id="trendBody"></div>
+          </div>
+          <div class="card">
+            <div class="card-head">
+              <div><h2 data-i18n="Previsão de 7 dias">Previsão de 7 dias</h2><p id="weatherSub" data-i18n="Chuva e evapotranspiração da sua região">Chuva e evapotranspiração da sua região</p></div>
+              <span class="badge blue" id="weatherBadge" data-i18n="Clima">Clima</span>
+            </div>
+            <div class="card-body"><div class="weather-strip" id="weatherStrip"></div><div class="weather-foot" id="weatherFoot"></div></div>
+          </div>
+          <div class="card">
+            <div class="card-head">
+              <div><h2 data-i18n="Economia com irrigação de precisão">Economia com irrigação de precisão</h2><p data-i18n="Comparação com o método tradicional · todas as áreas do plano">Comparação com o método tradicional · todas as áreas do plano</p></div>
+              <span class="badge green"><span class="dot"></span><span data-i18n="Mensal">Mensal</span></span>
+            </div>
+            <div class="card-body" id="savingsBody"></div>
+          </div>
+        </div>
+
+        <div class="grid g2 mt14">
+          <div class="card">
+            <div class="card-head">
+              <div><h2 data-i18n="Balanço hídrico">Balanço hídrico</h2><p id="balanceSub" data-i18n="Demanda da cultura × chuva prevista">Demanda da cultura × chuva prevista</p></div>
+              <span class="badge blue" data-i18n="7 dias">7 dias</span>
+            </div>
+            <div class="card-body" id="balanceBody"></div>
+          </div>
+          <div class="card">
+            <div class="card-head">
+              <div><h2 data-i18n="Últimas irrigações">Últimas irrigações</h2><p data-i18n="Histórico recente do plano">Histórico recente do plano</p></div>
+              <span class="badge gray" id="historyCount"></span>
+            </div>
+            <div class="card-body" id="historyBody"></div>
+          </div>
+        </div>
+
+        <div class="card mt14">
+          <div class="card-head">
+            <div><h2 data-i18n="Suas áreas monitoradas">Suas áreas monitoradas</h2><p id="areasSub" data-i18n="Umidade do solo e recomendação por área">Umidade do solo e recomendação por área</p></div>
+            <button class="btn btn-secondary btn-sm" data-route="calculator"><svg><use href="#i-plus"/></svg><span data-i18n="Nova área">Nova área</span></button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr>
+                <th data-i18n="Área">Área</th><th data-i18n="Cultura">Cultura</th><th data-i18n="Sistema">Sistema</th><th class="t-right" data-i18n="Umidade">Umidade</th><th data-i18n="Status">Status</th><th data-i18n="Recomendação">Recomendação</th><th class="t-right" data-i18n="Ações">Ações</th>
+              </tr></thead>
+              <tbody id="areasBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="data-strip mt14">
+          <div class="ds-left"><span class="ds-dot"></span><div><b data-i18n="Dados oficiais">Dados oficiais</b><span>IBGE · Jucepi · Embrapa · NASA POWER · Open-Meteo</span></div></div>
+          <button class="btn btn-secondary btn-sm" data-route="data"><svg><use href="#i-database"/></svg><span data-i18n="Ver base de dados">Ver base de dados</span></button>
+        </div>
+
+        <p class="src" data-i18n="Leituras de sensores simuladas para demonstração. Clima por Open-Meteo (ao vivo) ou climatologia NASA POWER 2001–2025 por município. Cálculos baseados em FAO-56. Valor da água economizada: R$ 0,50/m³.">Leituras de sensores simuladas para demonstração. Clima por Open-Meteo (ao vivo) ou climatologia NASA POWER 2001–2025 por município. Cálculos baseados em FAO-56. Valor da água economizada: R$ 0,50/m³.</p>
+      </section>
+
+      <!-- ============================================================
+           CALCULADORA
+           ============================================================ -->
+      <section class="view" id="view-calculator">
+        <div class="page-head">
+          <div>
+            <div class="eyebrow" data-i18n="Recomendador">Recomendador</div>
+            <h1 data-i18n="Calculadora de irrigação">Calculadora de irrigação</h1>
+            <p class="sub" data-i18n="Descubra quantos milímetros irrigar, quanto vai custar e qual sistema tem o melhor custo-benefício para a sua cultura.">Descubra quantos milímetros irrigar, quanto vai custar e qual sistema tem o melhor custo-benefício para a sua cultura.</p>
+          </div>
+          <div class="page-actions">
+            <button class="btn btn-ghost" id="calcHelp"><svg><use href="#i-info"/></svg><span data-i18n="Como calculamos">Como calculamos</span></button>
+          </div>
+        </div>
+
+        <div class="wizard-layout">
+          <div class="wizard-card">
+            <div class="steps" id="wizSteps">
+              <button class="step active" data-step="1"><span class="n">1</span><span class="lbl" data-i18n="Sua lavoura">Sua lavoura</span></button>
+              <button class="step" data-step="2"><span class="n">2</span><span class="lbl" data-i18n="Água no solo">Água no solo</span></button>
+              <button class="step" data-step="3"><span class="n">3</span><span class="lbl" data-i18n="Recomendação">Recomendação</span></button>
+            </div>
+
+            <div class="wizard-body">
+              <div class="step-pane active" id="step1"></div>
+              <div class="step-pane" id="step2"></div>
+              <div class="step-pane" id="step3"></div>
+            </div>
+
+            <div class="wizard-actions">
+              <button class="btn btn-secondary" id="wizBack"><svg><use href="#i-arrow-left"/></svg><span data-i18n="Voltar">Voltar</span></button>
+              <div class="wizard-actions-right">
+                <button class="btn btn-ghost" id="wizReset" data-i18n="Novo cálculo">Novo cálculo</button>
+                <button class="btn btn-primary" id="wizNext">Continuar<svg><use href="#i-arrow-right"/></svg></button>
+              </div>
+            </div>
+          </div>
+
+          <aside class="summary" id="wizSummary"></aside>
+        </div>
+      </section>
+
+      <!-- ============================================================
+           BASE DE DADOS
+           ============================================================ -->
+      <section class="view" id="view-data">
+        <div class="page-head">
+          <div>
+            <div class="eyebrow" data-i18n="Dados e fontes">Dados e fontes</div>
+            <h1 data-i18n="Base de dados">Base de dados</h1>
+            <p class="sub" data-i18n="Indicadores oficiais, parâmetros agronômicos e metodologia do modelo.">Indicadores oficiais, parâmetros agronômicos e metodologia do modelo.</p>
+          </div>
+          <div class="page-actions">
+            <span class="data-version" id="dataVersion"></span>
+            <button class="btn btn-secondary" id="dataExport"><svg><use href="#i-download"/></svg><span data-i18n="Exportar CSV">Exportar CSV</span></button>
+          </div>
+        </div>
+
+        <div class="notice data-note" data-i18n="A Embrapa é referência em solos, clima e manejo da irrigação. Para micro e pequenos empreendedores, usamos IBGE, Jucepi/Gov.PI e Sebrae.">A Embrapa é referência em solos, clima e manejo da irrigação. Para micro e pequenos empreendedores, usamos IBGE, Jucepi/Gov.PI e Sebrae.</div>
+
+        <div class="grid g3" id="dataIndicators"></div>
+
+        <div class="card mt14">
+          <div class="card-head">
+            <div><h2 data-i18n="Fontes oficiais">Fontes oficiais</h2><p data-i18n="Links públicos para auditoria e atualização.">Links públicos para auditoria e atualização.</p></div>
+            <span class="badge green"><span class="dot"></span><span data-i18n="Base aberta">Base aberta</span></span>
+          </div>
+          <div class="card-body"><div class="source-grid" id="dataSources"></div></div>
+        </div>
+
+        <div class="grid g2 mt14">
+          <div class="card">
+            <div class="card-head"><div><h2 data-i18n="Culturas e coeficientes">Culturas e coeficientes</h2><p data-i18n="Kc, ciclo e profundidade radicular (FAO-56 / Embrapa).">Kc, ciclo e profundidade radicular (FAO-56 / Embrapa).</p></div></div>
+            <div class="card-body card-flush"><div id="dataCrops"></div></div>
+          </div>
+          <div class="card">
+            <div class="card-head"><div><h2 data-i18n="Solos e água disponível">Solos e água disponível</h2><p data-i18n="Capacidade de campo, ponto de murcha e CAD por classe textural.">Capacidade de campo, ponto de murcha e CAD por classe textural.</p></div></div>
+            <div class="card-body card-flush"><div id="dataSoils"></div></div>
+          </div>
+        </div>
+
+        <div class="grid g2 mt14">
+          <div class="card">
+            <div class="card-head"><div><h2 data-i18n="Sistemas de irrigação">Sistemas de irrigação</h2><p data-i18n="Eficiência, investimento e vida útil de referência.">Eficiência, investimento e vida útil de referência.</p></div></div>
+            <div class="card-body card-flush"><div id="dataSystems"></div></div>
+          </div>
+          <div class="card">
+            <div class="card-head"><div><h2 data-i18n="Base municipal">Base municipal</h2><p data-i18n="Cobertura, clima e déficit hídrico dos 224 municípios.">Cobertura, clima e déficit hídrico dos 224 municípios.</p></div></div>
+            <div class="card-body" id="dataMunicipal"></div>
+          </div>
+        </div>
+
+        <div class="card mt14">
+          <div class="card-head"><div><h2 data-i18n="Metodologia">Metodologia</h2><p data-i18n="Como o cálculo é feito e quais são os limites.">Como o cálculo é feito e quais são os limites.</p></div></div>
+          <div class="card-body" id="dataMethod"></div>
+        </div>
+
+        <p class="src" id="dataFoot"></p>
+      </section>
+
+      <section class="view" id="view-admin">
+        <div class="page-head">
+          <div><div class="eyebrow" data-i18n="Administração">Administração</div><h1 data-i18n="Agricultores e fazendas">Agricultores e fazendas</h1><p class="sub" data-i18n="Acompanhe os cadastros e as plantações de cada propriedade.">Acompanhe os cadastros e as plantações de cada propriedade.</p></div>
+        </div>
+        <div class="grid g3 admin-farm-kpis" id="adminFarmKpis"></div>
+        <div class="admin-farm-list" id="adminFarmList"></div>
+      </section>
+
+      <!-- ============================================================
+           AUTOMAÇÃO ESP32 (simulação integrada: automacao-esp32.html)
+           ============================================================ -->
+      <section class="view active" id="view-automation">
+        <div class="page-head">
+          <div>
+            <div class="eyebrow" data-i18n="Campo conectado">Campo conectado</div>
+            <h1 data-i18n="Automação ESP32">Automação ESP32</h1>
+            <p class="sub" data-i18n="Sensores de umidade + ESP32 + válvulas solenoides: a recomendação do AgroÁgua executada automaticamente no campo.">Sensores de umidade + ESP32 + válvulas solenoides: a recomendação do AgroÁgua executada automaticamente no campo.</p>
+          </div>
+          <div class="page-actions">
+            <a class="btn btn-secondary" href="automacao-esp32.html" target="_blank" rel="noopener"><svg><use href="#i-arrow-right"/></svg><span data-i18n="Abrir em tela cheia">Abrir em tela cheia</span></a>
+          </div>
+        </div>
+
+        <div class="grid g3" id="espStatus">
+          <div class="card"><div class="card-body"><div class="eyebrow" data-i18n="Bomba">Bomba</div><strong id="espPump" style="font-size:20px">—</strong></div></div>
+          <div class="card"><div class="card-body"><div class="eyebrow" data-i18n="Reservatório">Reservatório</div><strong id="espTank" style="font-size:20px">—</strong></div></div>
+          <div class="card"><div class="card-body"><div class="eyebrow" data-i18n="Setores">Setores</div><div id="espSectors" style="font-weight:600">—</div></div></div>
+        </div>
+
+        <div class="card mt14" style="overflow:hidden">
+          <iframe id="espFrame" title="Simulação de irrigação automática com ESP32" data-src="automacao-esp32.html?embed=1"
+                  style="display:block;width:100%;height:1250px;border:0;background:transparent" loading="lazy"></iframe>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<!-- ================= CITY MODAL ================= -->
+<div class="modal" id="cityModal" aria-hidden="true">
+  <div class="modal-backdrop" data-close="cityModal"></div>
+  <div class="modal-panel">
+    <div class="modal-head">
+      <div><h2 data-i18n="Trocar município">Trocar município</h2><p data-i18n="Clima, ETo e recomendação são recalculados para a cidade ativa.">Clima, ETo e recomendação são recalculados para a cidade ativa.</p></div>
+      <button class="icon-btn" data-close="cityModal" aria-label="Fechar"><svg><use href="#i-x"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div class="search"><svg><use href="#i-search"/></svg><input id="citySearch" placeholder="Buscar município do Piauí..." data-i18n-placeholder="Buscar município do Piauí..." autocomplete="off"></div>
+      <div class="city-list" id="cityList"></div>
+    </div>
+    <div class="modal-foot"><span data-i18n="224 municípios · base IBGE / NASA POWER">224 municípios · base IBGE / NASA POWER</span><span id="cityCount"></span></div>
+  </div>
+</div>
+
+<!-- ================= PLAN MODAL ================= -->
+<div class="modal" id="planModal" aria-hidden="true">
+  <div class="modal-backdrop" data-close="planModal"></div>
+  <div class="modal-panel plan-modal-panel">
+    <div class="modal-head">
+      <div><h2 data-i18n="Planos AgroÁgua">Planos AgroÁgua</h2><p data-i18n="Escolha o plano ideal para o tamanho da sua produção.">Escolha o plano ideal para o tamanho da sua produção.</p></div>
+      <button class="icon-btn" data-close="planModal" aria-label="Fechar"><svg><use href="#i-x"/></svg></button>
+    </div>
+    <div class="modal-body" id="planBody"></div>
+    <div class="modal-foot"><span data-i18n="Cancele quando quiser · 14 dias grátis">Cancele quando quiser · 14 dias grátis</span><button class="btn btn-ghost btn-sm" id="resetDemo" data-i18n="Restaurar demonstração">Restaurar demonstração</button></div>
+  </div>
+</div>
+
+<!-- ================= HELP MODAL ================= -->
+<div class="modal" id="helpModal" aria-hidden="true">
+  <div class="modal-backdrop" data-close="helpModal"></div>
+  <div class="modal-panel">
+    <div class="modal-head">
+      <div><h2 data-i18n="Como o cálculo funciona">Como o cálculo funciona</h2><p data-i18n="Transparência para você confiar na recomendação.">Transparência para você confiar na recomendação.</p></div>
+      <button class="icon-btn" data-close="helpModal" aria-label="Fechar"><svg><use href="#i-x"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <ul class="list-clean">
+        <li><svg><use href="#i-check"/></svg><span><strong data-i18n="Umidade do solo:">Umidade do solo:</strong> <span data-i18n="média ponderada das leituras em 20, 40 e 60 cm, comparada à capacidade de campo e ao ponto de murcha do solo.">média ponderada das leituras em 20, 40 e 60 cm, comparada à capacidade de campo e ao ponto de murcha do solo.</span></span></li>
+        <li><svg><use href="#i-check"/></svg><span><strong data-i18n="Lâmina líquida:">Lâmina líquida:</strong> <span data-i18n="água necessária para repor o déficit até a capacidade de campo, descontando a chuva prevista.">água necessária para repor o déficit até a capacidade de campo, descontando a chuva prevista.</span></span></li>
+        <li><svg><use href="#i-check"/></svg><span><strong data-i18n="Lâmina bruta:">Lâmina bruta:</strong> <span data-i18n="lâmina líquida dividida pela eficiência do sistema de irrigação.">lâmina líquida dividida pela eficiência do sistema de irrigação.</span></span></li>
+        <li><svg><use href="#i-check"/></svg><span><strong data-i18n="Custo:">Custo:</strong> <span data-i18n="energia (kWh/m³ × tarifa), água e manutenção. O TCO de 10 anos inclui investimento inicial.">energia (kWh/m³ × tarifa), água e manutenção. O TCO de 10 anos inclui investimento inicial.</span></span></li>
+        <li><svg><use href="#i-check"/></svg><span><strong data-i18n="Recomendação:">Recomendação:</strong> <span data-i18n="combina eficiência hídrica, custo total e adequação do sistema à cultura (FAO-56).">combina eficiência hídrica, custo total e adequação do sistema à cultura (FAO-56).</span></span></li>
+      </ul>
+      <p class="src" data-i18n="A recomendação não substitui projeto agronômico, análise de solo ou assistência técnica.">A recomendação não substitui projeto agronômico, análise de solo ou assistência técnica.</p>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<button type="button" class="agroia-toggle" id="agroiaToggle" aria-controls="agroiaPanel" aria-expanded="false">LiaIA</button>
+<section class="agroia-panel" id="agroiaPanel" role="dialog" aria-labelledby="agroiaTitle" hidden>
+  <div class="agroia-head">
+    <div><h2 id="agroiaTitle">LiaIA</h2><p>Ajuda com o AgroÁgua e sua irrigação</p></div>
+    <button class="agroia-close" id="agroiaClose" type="button" aria-label="Fechar conversa">×</button>
+  </div>
+  <div class="agroia-log" id="agroiaLog" role="log" aria-live="polite" aria-label="Conversa com a LiaIA">
+    <p class="agroia-message model">Sou a LiaIA. Como posso ajudar com o AgroÁgua ou sua irrigação?</p>
+  </div>
+  <p class="agroia-status" id="agroiaStatus" role="status"></p>
+  <form class="agroia-form" id="agroiaForm">
+    <label for="agroiaInput">Sua mensagem</label>
+    <textarea id="agroiaInput" rows="2" maxlength="2000" required placeholder="Como cadastro uma área?"></textarea>
+    <div class="agroia-actions">
+      <button id="agroiaClear" type="button">Nova conversa</button>
+      <button id="agroiaSend" type="submit">Enviar</button>
+    </div>
+  </form>
+</section>
+
+<script src="js/municipios_pi.js"></script>
+<script src="js/base_dados.js"></script>
+<script src="js/i18n.js"></script>
+<script src="js/database.js"></script>
+<script src="js/saas.js"></script>
+<script src="js/agroia.js"></script>
+</body>
+</html>
