@@ -1,6 +1,7 @@
 """Servidor do AgroÁgua e ponto de entrada da API AgroIA."""
 
 from pathlib import Path
+import mimetypes
 import os
 
 import requests
@@ -25,10 +26,17 @@ PAGES = {
     "automacao-esp32.html",
 }
 PUBLIC_EXTENSIONS = {
-    "ativos": {".css", ".js", ".svg", ".png", ".jpg", ".webp", ".woff", ".woff2"},
-    "assets": {".css", ".js", ".svg", ".png", ".jpg", ".webp", ".woff", ".woff2"},
+    "ativos": {".css", ".js", ".svg", ".png", ".jpg", ".jpeg", ".webp", ".woff", ".woff2"},
+    "assets": {".css", ".js", ".svg", ".png", ".jpg", ".jpeg", ".webp", ".woff", ".woff2"},
     "dados": {".js", ".json", ".csv"},
     "img": {".png", ".jpg", ".jpeg", ".svg", ".webp", ".gif"},
+}
+CUSTOM_MIMETYPES = {
+    ".css": "text/css; charset=utf-8",
+    ".js": "application/javascript; charset=utf-8",
+    ".json": "application/json; charset=utf-8",
+    ".csv": "text/csv; charset=utf-8",
+    ".svg": "image/svg+xml",
 }
 
 app = Flask(__name__, static_folder=None)
@@ -36,12 +44,27 @@ app.config["MAX_CONTENT_LENGTH"] = 128 * 1024
 app.json.ensure_ascii = False
 
 
+def _serve_public_file(folder: str, filename: str):
+    file_path = Path(filename)
+    suffix = file_path.suffix.lower()
+    extensions = PUBLIC_EXTENSIONS.get(folder, set())
+    if suffix not in extensions:
+        abort(404)
+    if any(part.startswith(".") for part in file_path.parts):
+        abort(404)
+    target_dir = PROJECT_ROOT / folder
+    if not target_dir.exists() or not (target_dir / file_path).is_file():
+        abort(404)
+    mimetype = CUSTOM_MIMETYPES.get(suffix) or mimetypes.guess_type(file_path.name)[0]
+    return send_from_directory(target_dir, str(file_path), mimetype=mimetype)
+
+
 @app.get("/")
 def home():
     html_dir = PROJECT_ROOT / "html"
     if (html_dir / "index.html").exists():
-        return send_from_directory(html_dir, "index.html", mimetype="text/html")
-    return send_from_directory(PROJECT_ROOT, "index.html", mimetype="text/html")
+        return send_from_directory(html_dir, "index.html", mimetype="text/html; charset=utf-8")
+    return send_from_directory(PROJECT_ROOT, "index.html", mimetype="text/html; charset=utf-8")
 
 
 @app.get("/api/health")
@@ -168,8 +191,8 @@ def page(filename):
         abort(404)
     html_dir = PROJECT_ROOT / "html"
     if (html_dir / filename).exists():
-        return send_from_directory(html_dir, filename, mimetype="text/html")
-    return send_from_directory(PROJECT_ROOT, filename, mimetype="text/html")
+        return send_from_directory(html_dir, filename, mimetype="text/html; charset=utf-8")
+    return send_from_directory(PROJECT_ROOT, filename, mimetype="text/html; charset=utf-8")
 
 
 @app.get("/ativos/<path:filename>", defaults={"folder": "ativos"})
@@ -177,15 +200,7 @@ def page(filename):
 @app.get("/dados/<path:filename>", defaults={"folder": "dados"})
 @app.get("/img/<path:filename>", defaults={"folder": "img"})
 def public_file(folder, filename):
-    extensions = PUBLIC_EXTENSIONS.get(folder, set())
-    if Path(filename).suffix.lower() not in extensions:
-        abort(404)
-    if any(part.startswith(".") for part in Path(filename).parts):
-        abort(404)
-    target_dir = PROJECT_ROOT / folder
-    if not target_dir.exists():
-        abort(404)
-    return send_from_directory(target_dir, filename)
+    return _serve_public_file(folder, filename)
 
 
 @app.errorhandler(HTTPException)
