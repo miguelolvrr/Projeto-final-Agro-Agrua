@@ -3,8 +3,8 @@
    ============================================================ */
 'use strict';
 
-const DATA = window.MUNICIPIOS_PI;
-const CITIES = (DATA && DATA.municipios) || [];
+const AGRO_PI_DATA = window.MUNICIPIOS_PI;
+const CITIES = (AGRO_PI_DATA && AGRO_PI_DATA.municipios) || [];
 const CITY_BY_ID = new Map(CITIES.map((c) => [c.id, c]));
 
 const MONTHS = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
@@ -49,11 +49,8 @@ const SESSION_KEY = 'agroagua_pi_admin_session';
 const ADMIN_USER = 'admin';
 const ADMIN_PASS = '2026';
 const SESSION_MS = 8 * 60 * 60 * 1000;
-const DEFAULT_CITY = 2211001; // Teresina
+const DEFAULT_CITY = 2211001;
 
-/* ============================================================
-   Helpers
-   ============================================================ */
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
@@ -88,7 +85,7 @@ const kcFor = (crop, phase) => {
   return crop.kc[1];
 };
 const phaseName = (p) => ({ ini: 'Inicial', cresc: 'Crescimento', prod: 'Produção', final: 'Final' }[p] || 'Produção');
-const cityOf = (id) => CITY_BY_ID.get(Number(id)) || CITY_BY_ID.get(DEFAULT_CITY) || CITIES[0];
+const cityOf = (id) => CITY_BY_ID.get(Number(id)) || CITY_BY_ID.get(DEFAULT_CITY) || CITIES[0] || { id: DEFAULT_CITY, nome: 'Teresina', pop: 866300, chuvaAnual: 1300, etoAnual: 1800, lat: -5.09, lon: -42.8, chuva: Array(12).fill(100), eto: Array(12).fill(5), t2m: Array(12).fill(28), deficit: 500 };
 const nowMonth = () => new Date().getMonth();
 const findCity = (name) => CITIES.find((c) => norm(c.nome) === norm(name));
 
@@ -101,9 +98,6 @@ function toast(msg, type = '') {
   el._t = setTimeout(() => { el.className = 'toast'; }, 3000);
 }
 
-/* ============================================================
-   State
-   ============================================================ */
 function freshState() {
   return {
     activeCity: DEFAULT_CITY,
@@ -137,7 +131,7 @@ function loadState() {
 let state = loadState();
 
 function save() {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) { /* storage cheio/privado */ }
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
 }
 function log(type, msg) {
   state.admin.log.unshift({ id: Date.now() + Math.random(), ts: Date.now(), type, msg });
@@ -167,16 +161,13 @@ function seedDemo() {
   save();
 }
 
-/* ============================================================
-   Session / auth
-   ============================================================ */
 let session = null;
 function loadSession() {
   try {
     const s = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null');
     if (s && s.exp > Date.now()) return s;
     localStorage.removeItem(SESSION_KEY);
-  } catch (e) { /* ignore */ }
+  } catch (e) {}
   return null;
 }
 session = loadSession();
@@ -197,9 +188,6 @@ function doLogout() {
   try { localStorage.removeItem(SESSION_KEY); } catch (e) {}
 }
 
-/* ============================================================
-   Weather
-   ============================================================ */
 let weather = {};
 try { weather = JSON.parse(localStorage.getItem(WEATHER_KEY) || '{}') || {}; } catch (e) { weather = {}; }
 const weatherPromises = {};
@@ -211,7 +199,7 @@ function saveWeather() {
       if (!weather[id] || !weather[id].ts || weather[id].ts < cutoff) delete weather[id];
     }
     localStorage.setItem(WEATHER_KEY, JSON.stringify(weather));
-  } catch (e) { /* quota */ }
+  } catch (e) {}
 }
 function weatherFresh(w) { return !!(w && w.daily && w.ts && Date.now() - w.ts < 30 * 60 * 1000); }
 
@@ -301,9 +289,6 @@ function forecastFor(cityId) {
   return out;
 }
 
-/* ============================================================
-   Calculation engine
-   ============================================================ */
 function compute(p) {
   const crop = CROP_BY_ID.get(p.crop) || CROPS[2];
   const eff = SYSTEMS[p.system]?.eff ?? 0.9;
@@ -346,16 +331,15 @@ function areaForDay(area, day) {
   });
 }
 
-/* ============================================================
-   View helpers
-   ============================================================ */
 const ROUTES = {
+  automation: { title: 'Automação ESP32', eyebrow: 'Operação' },
   overview: { title: 'Visão geral', eyebrow: 'Operação' },
   calculator: { title: 'Calculadora', eyebrow: 'Operação' },
   areas: { title: 'Minhas áreas', eyebrow: 'Operação' },
   agenda: { title: 'Agenda', eyebrow: 'Operação' },
   climate: { title: 'Clima & municípios', eyebrow: 'Análise' },
   reports: { title: 'Relatórios', eyebrow: 'Análise' },
+  data: { title: 'Base de dados', eyebrow: 'Análise' },
   admin: { title: 'Administração', eyebrow: 'Gestão' },
 };
 let activeRoute = 'overview';
@@ -386,9 +370,6 @@ function iconFor(rain, prob) {
   return '☀️';
 }
 
-/* ============================================================
-   Router
-   ============================================================ */
 function navigate(route, initial = false) {
   if (!ROUTES[route]) route = 'overview';
   activeRoute = route;
@@ -396,8 +377,8 @@ function navigate(route, initial = false) {
   const view = $('#view-' + route);
   if (view) view.classList.add('active');
   $$('.nav-btn').forEach((b) => b.classList.toggle('active', b.dataset.route === route));
-  $('#pageTitle').textContent = ROUTES[route].title;
-  $('#pageEyebrow').textContent = ROUTES[route].eyebrow;
+  if ($('#pageTitle')) $('#pageTitle').textContent = ROUTES[route].title;
+  if ($('#pageEyebrow')) $('#pageEyebrow').textContent = ROUTES[route].eyebrow;
   if (!initial) {
     try { history.replaceState(null, '', '#' + route); } catch (e) {}
   }
@@ -408,50 +389,55 @@ function navigate(route, initial = false) {
 
 function renderRoute(route) {
   switch (route) {
+    case 'automation': renderAutomationEmbed(); break;
     case 'overview': renderOverview(); break;
     case 'calculator': renderWizard(); break;
     case 'areas': renderAreas(); break;
     case 'agenda': renderAgenda(); break;
     case 'climate': renderClimate(); break;
     case 'reports': renderReports(); break;
+    case 'data': renderData(); break;
     case 'admin': renderAdmin(); break;
   }
 }
-function renderShell() {
-  const city = activeCity();
-  $('#cityBtnName').textContent = city.nome;
-  $('#cityBtn').title = city.nome + ' · ' + cityPopulation(city);
-  $('#sideCityName').textContent = city.nome;
-  $('#sideCityMeta').textContent = 'PI · ' + cityPopulation(city);
-  $('#navAreasCount').textContent = state.areas.length;
-  const w = todayWeather(city.id);
-  const pill = $('#weatherPill');
-  if (w.live) {
-    pill.classList.remove('offline');
-    $('#weatherLabel').textContent = 'Ao vivo';
-    $('#weatherTemp').textContent = Math.round(w.tmax) + '°C';
-  } else {
-    pill.classList.add('offline');
-    $('#weatherLabel').textContent = 'Clima médio';
-    $('#weatherTemp').textContent = fmt(city.t2m[nowMonth()], 0) + '°C';
-  }
-  if (isAdmin()) {
-    $('#userAvatar').innerHTML = 'A';
-    $('#userRole').textContent = 'Administrador';
-    $('#userName').textContent = 'admin';
-    $('#adminLock').innerHTML = '<svg><use href="#i-lock"/></svg>';
-  } else {
-    $('#userAvatar').innerHTML = '<svg><use href="#i-user"/></svg>';
-    $('#userRole').textContent = 'Acesso';
-    $('#userName').textContent = 'Entrar';
-    $('#adminLock').innerHTML = '<svg><use href="#i-lock"/></svg>';
-  }
-  $('#adminLock').closest('.nav-btn').classList.toggle('admin-on', isAdmin());
+
+function renderAutomationEmbed() {
+  const frame = $('#automationFrame');
+  if (!frame) return;
+  const lang = document.documentElement.lang && document.documentElement.lang.startsWith('zh') ? 'zh' : 'pt';
+  const target = 'automacao-esp32.html?embed=1&lang=' + lang;
+  if (!frame.getAttribute('src')) frame.setAttribute('src', target);
 }
 
-/* ============================================================
-   Overview
-   ============================================================ */
+function renderShell() {
+  const city = activeCity();
+  if ($('#cityBtnName')) $('#cityBtnName').textContent = city.nome;
+  if ($('#cityBtn')) $('#cityBtn').title = city.nome + ' · ' + cityPopulation(city);
+  if ($('#sideCityName')) $('#sideCityName').textContent = city.nome;
+  if ($('#sideCityMeta')) $('#sideCityMeta').textContent = 'PI · ' + cityPopulation(city);
+  if ($('#navAreasCount')) $('#navAreasCount').textContent = state.areas.length;
+  const w = todayWeather(city.id);
+  const pill = $('#weatherPill');
+  if (pill) {
+    if (w.live) {
+      pill.classList.remove('offline');
+      if ($('#weatherLabel')) $('#weatherLabel').textContent = 'Ao vivo';
+      if ($('#weatherTemp')) $('#weatherTemp').textContent = Math.round(w.tmax) + '°C';
+    } else {
+      pill.classList.add('offline');
+      if ($('#weatherLabel')) $('#weatherLabel').textContent = 'Clima médio';
+      if ($('#weatherTemp')) $('#weatherTemp').textContent = fmt(city.t2m[nowMonth()], 0) + '°C';
+    }
+  }
+  if ($('#userAvatar')) $('#userAvatar').innerHTML = isAdmin() ? 'A' : '<svg><use href="#i-user"/></svg>';
+  if ($('#userRole')) $('#userRole').textContent = isAdmin() ? 'Administrador' : 'Acesso';
+  if ($('#userName')) $('#userName').textContent = isAdmin() ? 'admin' : 'Entrar';
+  if ($('#adminLock')) {
+    $('#adminLock').innerHTML = '<svg><use href="#i-lock"/></svg>';
+    $('#adminLock').closest('.nav-btn')?.classList.toggle('admin-on', isAdmin());
+  }
+}
+
 function renderOverview() {
   const city = activeCity();
   const areas = state.areas.filter((a) => Number(a.city) === Number(city.id));
@@ -470,22 +456,24 @@ function renderOverview() {
   });
   const savedPct = design > 0 ? ((design - current) / design) * 100 : 0;
 
-  $('#ovSub').textContent = city.nome + ' · ' + areas.length + ' áreas · ' + fmt(totalHa, 1) + ' ha monitorados';
+  if ($('#ovSub')) $('#ovSub').textContent = city.nome + ' · ' + areas.length + ' áreas · ' + fmt(totalHa, 1) + ' ha monitorados';
 
-  $('#ovKpis').innerHTML = [
-    kpi('Áreas', areas.length, totalHa.toFixed(1) + ' ha', 'layers', 'brand'),
-    kpi('Demanda de projeto', fmt(demand, 1), 'hoje: ' + fmt(todayDemand, 1) + ' m³', 'drop'),
-    kpi('Custo operacional', 'R$ ' + fmt(cost, 2), 'energia + água', 'calc'),
-    kpi('Economia potencial', fmt(savedPct, 0) + '%', 'vs. aspersão', 'leaf', savedPct >= 15 ? 'good' : ''),
-    kpi('Fonte de água', fmt(source, 0), 'm³/dia', 'map', demand > source ? 'bad' : 'good'),
-  ].join('');
+  if ($('#ovKpis')) {
+    $('#ovKpis').innerHTML = [
+      kpi('Áreas', areas.length, totalHa.toFixed(1) + ' ha', 'layers', 'brand'),
+      kpi('Demanda de projeto', fmt(demand, 1), 'hoje: ' + fmt(todayDemand, 1) + ' m³', 'drop'),
+      kpi('Custo operacional', 'R$ ' + fmt(cost, 2), 'energia + água', 'calc'),
+      kpi('Economia potencial', fmt(savedPct, 0) + '%', 'vs. aspersão', 'leaf', savedPct >= 15 ? 'good' : ''),
+      kpi('Fonte de água', fmt(source, 0), 'm³/dia', 'map', demand > source ? 'bad' : 'good'),
+    ].join('');
+  }
 
   renderDemoNotice();
   renderWater(rows, demand, source, todayDemand);
   renderOverviewWeather(city);
   renderChart($('#ovChart'), city);
-  $('#ovDeficit').textContent = 'déficit ' + fmt0(city.deficit) + ' mm/ano';
-  $('#ovChartSub').textContent = city.nome + ' · médias mensais 2001–2025';
+  if ($('#ovDeficit')) $('#ovDeficit').textContent = 'déficit ' + fmt0(city.deficit) + ' mm/ano';
+  if ($('#ovChartSub')) $('#ovChartSub').textContent = city.nome + ' · médias mensais 2001–2025';
   renderOverviewAlerts(city, todayRows, todayDemand, source);
   renderOverviewAreas(rows);
 }
@@ -497,6 +485,7 @@ function kpi(label, value, foot, icon, cls = '') {
 
 function renderDemoNotice() {
   const el = $('#demoNotice');
+  if (!el) return;
   if (!state.admin.demo) { el.innerHTML = ''; return; }
   el.innerHTML = `<div class="notice warn">
     <svg><use href="#i-info"/></svg>
@@ -508,15 +497,18 @@ function renderDemoNotice() {
 }
 
 function renderWater(rows, demand, source, todayDemand) {
+  const el = $('#ovWater');
+  if (!el) return;
   const pct = source > 0 ? Math.min(100, (demand / source) * 100) : 0;
   const color = pct > 100 ? 'var(--red)' : pct > 85 ? 'var(--amber)' : 'var(--brand)';
   const areas = rows.length;
   const ha = rows.reduce((s, r) => s + Number(r.area.area), 0);
-  const cost = rows.reduce((s, r) => s + r.p.cost, 0);
-  $('#ovWaterBadge').innerHTML = demand > source
-    ? '<span class="badge red"><span class="dot"></span>Fonte insuficiente</span>'
-    : '<span class="badge green"><span class="dot"></span>Dentro da capacidade</span>';
-  $('#ovWater').innerHTML = `
+  if ($('#ovWaterBadge')) {
+    $('#ovWaterBadge').innerHTML = demand > source
+      ? '<span class="badge red"><span class="dot"></span>Fonte insuficiente</span>'
+      : '<span class="badge green"><span class="dot"></span>Dentro da capacidade</span>';
+  }
+  el.innerHTML = `
     <div class="hbar">
       <div class="top"><span>Demanda de projeto</span><span class="v">${fmt(demand, 1)} de ${fmt(source, 0)} m³/dia</span></div>
       <div class="track"><i style="width:${pct}%;background:${color}"></i></div>
@@ -533,20 +525,26 @@ function renderWater(rows, demand, source, todayDemand) {
 function renderOverviewWeather(city) {
   const days = forecastFor(city.id);
   const live = days.some((d) => d.live);
-  $('#ovForecastSub').textContent = city.nome + ' · ' + (live ? 'previsão ao vivo' : 'estimativa climática');
-  $('#ovForecastBadge').innerHTML = live
-    ? '<span class="badge green"><span class="dot"></span>ao vivo</span>'
-    : '<span class="badge amber"><span class="dot"></span>offline</span>';
-  $('#ovWeather').innerHTML = days.map((d, i) => `
-    <div class="wday ${d.date === todayISO() ? 'today' : ''}">
-      <div class="d">${d.date === todayISO() ? 'Hoje' : dateLong(d.date).split(',')[0]}</div>
-      <div class="i">${iconFor(d.rain, d.prob)}</div>
-      <div class="r">${fmt(d.rain, 1)} mm</div>
-      <div class="t">${fmt(d.tmin, 0)}° / ${fmt(d.tmax, 0)}°</div>
-    </div>`).join('');
-  $('#ovWeatherNote').textContent = live
-    ? 'Atualizado agora via Open-Meteo. A previsão usa o ponto do município.'
-    : 'Sem conexão: usando a climatologia do município. Os valores são estimativas.';
+  if ($('#ovForecastSub')) $('#ovForecastSub').textContent = city.nome + ' · ' + (live ? 'previsão ao vivo' : 'estimativa climática');
+  if ($('#ovForecastBadge')) {
+    $('#ovForecastBadge').innerHTML = live
+      ? '<span class="badge green"><span class="dot"></span>ao vivo</span>'
+      : '<span class="badge amber"><span class="dot"></span>offline</span>';
+  }
+  if ($('#ovWeather')) {
+    $('#ovWeather').innerHTML = days.map((d) => `
+      <div class="wday ${d.date === todayISO() ? 'today' : ''}">
+        <div class="d">${d.date === todayISO() ? 'Hoje' : dateLong(d.date).split(',')[0]}</div>
+        <div class="i">${iconFor(d.rain, d.prob)}</div>
+        <div class="r">${fmt(d.rain, 1)} mm</div>
+        <div class="t">${fmt(d.tmin, 0)}° / ${fmt(d.tmax, 0)}°</div>
+      </div>`).join('');
+  }
+  if ($('#ovWeatherNote')) {
+    $('#ovWeatherNote').textContent = live
+      ? 'Atualizado agora via Open-Meteo. A previsão usa o ponto do município.'
+      : 'Sem conexão: usando a climatologia do município. Os valores são estimativas.';
+  }
 }
 
 function renderChart(el, city) {
@@ -565,6 +563,8 @@ function renderChart(el, city) {
 }
 
 function renderOverviewAlerts(city, rows, demand, source) {
+  const el = $('#ovAlerts');
+  if (!el) return;
   const alerts = [];
   const days = forecastFor(city.id);
   const next3 = days.slice(0, 3).reduce((s, d) => s + d.rain, 0);
@@ -575,7 +575,7 @@ function renderOverviewAlerts(city, rows, demand, source) {
     alerts.push(alertBox('info', 'Comece por uma área', 'Cadastre um talhão para ver demanda, custo e agenda personalizada.'));
   } else {
     if (demand === 0) {
-      alerts.push(alertBox('good', 'Chuva cobre a demanda de hoje', `A previsão atende à necessidade hídrica das áreas. Aproveite para poupar energia e reprogramar a irrigação.`));
+      alerts.push(alertBox('good', 'Chuva cobre a demanda de hoje', 'A previsão atende à necessidade hídrica das áreas. Aproveite para poupar energia e reprogramar a irrigação.'));
     } else if (demand > source) {
       alerts.push(alertBox('danger', 'Demanda maior que a fonte', `Você precisa de ${fmt(demand, 1)} m³/dia e a fonte entrega ${fmt(source, 0)}. Reduza a área irrigada ou amplie o reservatório.`));
     } else {
@@ -591,7 +591,7 @@ function renderOverviewAlerts(city, rows, demand, source) {
       alerts.push(alertBox('info', 'Dá para economizar até 22%', 'Trocar aspersão ou sulco por gotejamento reduz a lâmina bruta para a mesma produção.'));
     }
   }
-  $('#ovAlerts').innerHTML = alerts.join('');
+  el.innerHTML = alerts.join('');
 }
 
 function alertBox(type, title, text) {
@@ -600,12 +600,14 @@ function alertBox(type, title, text) {
 }
 
 function renderOverviewAreas(rows) {
+  const el = $('#ovAreas');
+  if (!el) return;
   if (!rows.length) {
-    $('#ovAreas').innerHTML = `<div class="empty"><div class="ico"><svg width="20" height="20"><use href="#i-layers"/></svg></div><h3>Nenhuma área neste município</h3><p>Cadastre a primeira área para acompanhar água, energia e produtividade.</p><button class="btn btn-primary btn-sm" data-route="areas"><svg><use href="#i-plus"/></svg>Cadastrar área</button></div>`;
+    el.innerHTML = `<div class="empty"><div class="ico"><svg width="20" height="20"><use href="#i-layers"/></svg></div><h3>Nenhuma área neste município</h3><p>Cadastre a primeira área para acompanhar água, energia e produtividade.</p><button class="btn btn-primary btn-sm" data-route="calculator"><svg><use href="#i-plus"/></svg>Cadastrar área</button></div>`;
     return;
   }
   const list = rows.slice(0, 5);
-  $('#ovAreas').innerHTML = `<div class="table-wrap"><table>
+  el.innerHTML = `<div class="table-wrap"><table>
     <thead><tr><th>Área</th><th>Cultura</th><th class="t-right">Área</th><th>Sistema</th><th class="t-right">Demanda</th><th>Status</th></tr></thead>
     <tbody>${list.map((r) => {
       const today = areaDemand(r.area);
@@ -621,9 +623,6 @@ function renderOverviewAreas(rows) {
     }).join('')}</tbody></table></div>`;
 }
 
-/* ============================================================
-   Wizard
-   ============================================================ */
 let wizard = null;
 
 function newDraft() {
@@ -651,19 +650,19 @@ function renderWizard() {
   ensureWizard();
   const d = wizard.draft;
   const step = wizard.step;
-  $('#wizBadge').textContent = 'Passo ' + step + ' de 4';
+  if ($('#wizBadge')) $('#wizBadge').textContent = 'Passo ' + step + ' de 4';
   $$('#wizSteps .step').forEach((el) => {
     const n = Number(el.dataset.step);
     el.classList.toggle('active', n === step);
     el.classList.toggle('done', n < step);
   });
   $$('.step-pane').forEach((el) => el.classList.toggle('active', Number(el.dataset.step) === step));
-  $('#wizBack').disabled = step === 1;
+  if ($('#wizBack')) $('#wizBack').disabled = step === 1;
   const next = $('#wizNext');
-  next.style.visibility = step === 4 ? 'hidden' : 'visible';
+  if (next) next.style.visibility = step === 4 ? 'hidden' : 'visible';
 
   setVal('#wCity', cityOf(d.city).nome);
-  $('#wCityHint').textContent = 'Clima de ' + cityOf(d.city).nome + ' · ETo ' + fmt(d.eto, 2) + ' mm/dia';
+  if ($('#wCityHint')) $('#wCityHint').textContent = 'Clima de ' + cityOf(d.city).nome + ' · ETo ' + fmt(d.eto, 2) + ' mm/dia';
   setVal('#wName', d.name);
   setVal('#wArea', d.area);
   setVal('#wFlow', d.flow);
@@ -674,7 +673,7 @@ function renderWizard() {
   setVal('#wEto', d.eto);
   setVal('#wRain', d.rain);
   setVal('#wTariff', d.tariff);
-  $('#wEtoHint').textContent = todayWeather(d.city).live ? 'Preenchida pela previsão de hoje.' : 'Estimativa pela climatologia do município.';
+  if ($('#wEtoHint')) $('#wEtoHint').textContent = todayWeather(d.city).live ? 'Preenchida pela previsão de hoje.' : 'Estimativa pela climatologia do município.';
   const wRainHint = $('#wRainHint');
   if (wRainHint) {
     const rToday = todayWeather(d.city).rain;
@@ -684,7 +683,7 @@ function renderWizard() {
   }
   renderCropGrid();
   renderSystemGrid();
-  $('#wKc').value = fmt(kcFor(CROP_BY_ID.get(d.crop), d.phase), 2);
+  if ($('#wKc')) $('#wKc').value = fmt(kcFor(CROP_BY_ID.get(d.crop), d.phase), 2);
   renderWizardSummary();
   if (step === 4) renderWizardResult();
 }
@@ -697,9 +696,11 @@ function setVal(sel, value) {
 }
 
 function renderCropGrid() {
+  const grid = $('#wCropGrid');
+  if (!grid) return;
   const q = norm(wizard.cropSearch);
   const list = CROPS.filter((c) => !q || norm(c.nome).includes(q));
-  $('#wCropGrid').innerHTML = list.map((c) => `
+  grid.innerHTML = list.map((c) => `
     <button type="button" class="crop-card ${wizard.draft.crop === c.id ? 'sel' : ''}" data-crop="${c.id}">
       <div class="nm"><span>${esc(c.nome)}</span>${wizard.draft.crop === c.id ? '<svg width="13" height="13" style="color:var(--brand)"><use href="#i-check"/></svg>' : ''}</div>
       <div class="meta">${c.ciclo} dias · raiz ${(c.raiz * 100).toFixed(0)} cm</div>
@@ -708,7 +709,9 @@ function renderCropGrid() {
 }
 
 function renderSystemGrid() {
-  $('#wSysGrid').innerHTML = Object.entries(SYSTEMS).map(([id, s]) => `
+  const grid = $('#wSysGrid');
+  if (!grid) return;
+  grid.innerHTML = Object.entries(SYSTEMS).map(([id, s]) => `
     <button type="button" class="sys-card ${wizard.draft.system === id ? 'sel' : ''}" data-system="${id}">
       <div class="nm">${esc(s.nome)}</div>
       <div class="eff">${(s.eff * 100).toFixed(0)}% de eficiência</div>
@@ -717,979 +720,359 @@ function renderSystemGrid() {
 }
 
 function renderWizardSummary() {
+  ensureWizard();
   const d = wizard.draft;
-  const crop = CROP_BY_ID.get(d.crop);
-  $('#sumCity').textContent = cityOf(d.city).nome + ' · PI';
-  $('#sumBody').innerHTML = [
-    sumRow('Cultura', crop?.nome || '—'),
-    sumRow('Fase', phaseName(d.phase)),
-    sumRow('Área', fmt(d.area, 2) + ' ha'),
-    sumRow('Sistema', SYSTEMS[d.system]?.nome || '—'),
-    sumRow('Solo', SOILS[d.soil]?.nome || '—'),
-    sumRow('ETo de hoje', fmt(d.eto, 2) + ' mm'),
-    sumRow('Chuva 24h', fmt(d.rain, 1) + ' mm'),
-  ].join('');
-  $('#sumFoot').textContent = 'Kc ' + fmt(kcFor(crop, d.phase), 2) + ' · eficiência ' + ((SYSTEMS[d.system]?.eff || 0) * 100).toFixed(0) + '%';
-}
-function sumRow(k, v) {
-  return `<div class="sum-row"><span class="k">${esc(k)}</span><span class="v">${esc(v)}</span></div>`;
+  const p = compute(d);
+  const el = $('#wSummary');
+  if (!el) return;
+  el.innerHTML = `
+    <div class="sum-row"><span>Cultura</span><strong>${esc(p.crop.nome)} (${esc(phaseName(d.phase))})</strong></div>
+    <div class="sum-row"><span>Área e sistema</span><strong>${fmt(d.area, 2)} ha · ${esc(SYSTEMS[d.system]?.nome || d.system)} (${(p.eff * 100).toFixed(0)}%)</strong></div>
+    <div class="sum-row"><span>ETo e chuva</span><strong>${fmt(p.eto, 2)} mm/d · ${fmt(p.rain, 1)} mm</strong></div>
+    <div class="sum-row"><span>Lâmina bruta</span><strong>${fmt(p.gross, 2)} mm/dia</strong></div>
+    <div class="sum-row"><span>Volume diário</span><strong>${fmt(p.volume, 1)} m³/dia</strong></div>
+    <div class="sum-row"><span>Tempo de bomba</span><strong>${fmt(p.hours, 1)} h/dia</strong></div>
+    <div class="sum-row"><span>Custo estimado</span><strong>R$ ${fmt(p.cost, 2)}/dia</strong></div>
+    <div class="sum-row"><span>Turno de rega</span><strong>A cada ${p.interval} ${p.interval === 1 ? 'dia' : 'dias'} (${fmt(p.eventM3, 1)} m³)</strong></div>`;
 }
 
 function renderWizardResult() {
+  ensureWizard();
   const d = wizard.draft;
-  const p = compute({ ...d, kwh: state.settings.kwh, water: state.settings.water });
-  const crop = p.crop;
-  $('#wResultSub').textContent = `${crop.nome} · ${fmt(d.area, 2)} ha · ${SYSTEMS[d.system].nome} · ${cityOf(d.city).nome}`;
-  $('#wVol').textContent = fmt(p.volume, 1);
-  $('#wEtc').textContent = fmt(p.etc, 2);
-  $('#wGross').textContent = fmt(p.gross, 2);
-  $('#wHours').textContent = fmt(p.hours, 1);
-  $('#wCost').textContent = fmt(p.cost, 2);
-  $('#wVolNote').textContent = p.net === 0
-    ? 'A chuva prevista cobre a demanda de hoje. Não precisa irrigar.'
-    : `${crop.nome} · Kc ${fmt(p.kc, 2)} · eficiência ${fmt(p.eff * 100, 0)}%`
-      + (p.rain > 0 ? ` · com ${fmt(p.rain, 1)} mm de chuva; sem chuva: ${fmt((p.etc / p.eff) * 10 * p.area, 1)} m³/dia` : '');
-  $('#wIntervalNote').textContent = `Água disponível na zona radicular: ${fmt(p.available, 0)} mm (solo + raiz de ${fmt(crop.raiz * 100, 0)} cm).`;
-  $('#wInterval').textContent = p.interval;
-  $('#wEvent').textContent = fmt(p.eventM3, 1);
+  const p = compute(d);
+  const st = statusFor(p);
+  const rec = recFor(p);
+  const el = $('#wResult');
+  if (!el) return;
+  el.innerHTML = `
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <h2>Resultado da recomendação</h2>
+          <p>${esc(d.name || 'Área sem nome')} · ${esc(cityOf(d.city).nome)} · ${esc(p.crop.nome)}</p>
+        </div>
+        <span class="badge ${rec.cls}">${rec.label}</span>
+      </div>
+      <div class="card-body space-y-3">
+        <div class="grid g3">
+          <div><div class="tiny muted">Volume necessário</div><div style="font-size:20px;font-weight:800">${fmt(p.volume, 1)} m³/dia</div></div>
+          <div><div class="tiny muted">Tempo de operação</div><div style="font-size:20px;font-weight:800">${fmt(p.hours, 1)} h/dia</div></div>
+          <div><div class="tiny muted">Custo operacional</div><div style="font-size:20px;font-weight:800">R$ ${fmt(p.cost, 2)}/dia</div></div>
+        </div>
+        <div class="divider"></div>
+        <div class="small muted">
+          ETc: <b>${fmt(p.etc, 2)} mm/dia</b> · Chuva aproveitável: <b>${fmt(p.rainEff, 2)} mm/dia</b> ·
+          Lâmina líquida: <b>${fmt(p.net, 2)} mm/dia</b> · Lâmina bruta: <b>${fmt(p.gross, 2)} mm/dia</b> ·
+          Intervalo sugerido: <b>${p.interval} ${p.interval === 1 ? 'dia' : 'dias'}</b> (${st.label}).
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <button type="button" class="btn btn-primary" id="wSaveArea"><svg><use href="#i-check"/></svg>Salvar área no painel</button>
+          <button type="button" class="btn btn-secondary" id="wLogIrrigation"><svg><use href="#i-drop"/></svg>Registrar irrigação hoje</button>
+          <button type="button" class="btn btn-ghost" id="wResetWiz">Novo cálculo</button>
+        </div>
+      </div>
+    </div>`;
 
-  const base = Math.max(0.001, (p.net / 0.70) * 10 * p.area);
-  const rows = Object.entries(SYSTEMS).map(([id, s]) => ({ id, nome: s.nome, vol: (p.net / s.eff) * 10 * p.area }));
-  const max = Math.max(...rows.map((r) => r.vol), 0.001);
-  $('#wCompare').innerHTML = rows.map((r) => `
-    <div class="compare-row ${r.id === 'gotejamento' ? 'best' : ''}">
-      <span>${esc(r.nome)}</span>
-      <div class="track"><i style="width:${(r.vol / max) * 100}%"></i></div>
-      <span class="val">${fmt(r.vol, 1)} m³</span>
-    </div>`).join('');
+  const saveBtn = $('#wSaveArea');
+  if (saveBtn) {
+    saveBtn.onclick = () => {
+      const areaObj = {
+        id: state.nextId++,
+        name: (d.name || '').trim() || (p.crop.nome + ' · ' + cityOf(d.city).nome),
+        city: Number(d.city),
+        crop: d.crop,
+        phase: d.phase || 'prod',
+        area: clamp(d.area, 0.01, 50000),
+        system: d.system || 'gotejamento',
+        soil: d.soil || 'medio',
+        planting: d.planting || todayISO(),
+        source: clamp(d.source, 1, 100000),
+        flow: clamp(d.flow, 0.1, 50000),
+        createdAt: new Date().toISOString(),
+      };
+      state.areas.unshift(areaObj);
+      state.admin.demo = false;
+      save();
+      log('area', 'Área salva: ' + areaObj.name);
+      renderShell();
+      toast('Área "' + areaObj.name + '" salva no painel.');
+      navigate('areas');
+    };
+  }
 
-  const days = forecastFor(d.city);
-  $('#wSchedule').innerHTML = days.map((day) => {
-    const dd = day.date === todayISO() ? { ...day, rain: p.rain } : day;
-    const dp = areaForDay({ ...d, area: d.area }, dd);
-    const rec = recFor(dp);
-    return `<tr>
-      <td>${day.date === todayISO() ? 'Hoje' : dateLong(day.date).split(',')[0]} <span class="tiny muted">${dateShort(day.date)}</span></td>
-      <td class="t-right num">${fmt(dd.rain, 1)} mm</td>
-      <td class="t-right num">${fmt(dp.gross, 1)} mm</td>
-      <td class="t-right num">${fmt(dp.volume, 1)} m³</td>
-      <td><span class="badge ${rec.cls}">${rec.label}</span></td>
-    </tr>`;
-  }).join('');
+  const logBtn = $('#wLogIrrigation');
+  if (logBtn) {
+    logBtn.onclick = () => {
+      state.history.unshift({
+        id: Date.now() + Math.random(),
+        date: todayISO(),
+        city: Number(d.city),
+        areaName: (d.name || '').trim() || p.crop.nome,
+        crop: p.crop.nome,
+        volume: Number(p.volume.toFixed(1)),
+        cost: Number(p.cost.toFixed(2)),
+      });
+      state.history = state.history.slice(0, 200);
+      save();
+      log('irrigation', 'Irrigação registrada: ' + fmt(p.volume, 1) + ' m³');
+      toast('Irrigação registrada no histórico.');
+    };
+  }
+
+  const resetBtn = $('#wResetWiz');
+  if (resetBtn) {
+    resetBtn.onclick = () => {
+      wizard = { step: 1, draft: newDraft(), cropSearch: '' };
+      renderWizard();
+    };
+  }
 }
-
-/* ============================================================
-   Areas
-   ============================================================ */
-const areasFilter = { q: '', city: 'all', system: 'all', page: 1 };
-const AREAS_PER_PAGE = 10;
 
 function renderAreas() {
-  const all = state.areas;
-  const totalHa = all.reduce((s, a) => s + Number(a.area), 0);
-  const rows = all.map((a) => ({ area: a, p: areaDemand(a, false) }));
-  const todayTotal = all.reduce((s, a) => s + areaDemand(a).volume, 0);
-  const demand = rows.reduce((s, r) => s + r.p.volume, 0);
-  const cost = rows.reduce((s, r) => s + r.p.cost, 0);
-  let design = 0, current = 0;
-  rows.forEach((r) => {
-    const nr = compute({ crop: r.area.crop, phase: 'prod', area: r.area.area, system: r.area.system, soil: r.area.soil, eto: r.p.eto, rain: 0, flow: r.area.flow || 6, tariff: state.settings.tariff, kwh: state.settings.kwh, water: 0 });
-    design += (nr.net / 0.7) * 10 * Number(r.area.area);
-    current += nr.volume;
-  });
-  const pct = design > 0 ? ((design - current) / design) * 100 : 0;
-  const savedM3 = Math.max(0, design - current);
-  const savedRs = savedM3 * (state.settings.kwh * state.settings.tariff + state.settings.water);
-
-  $('#areasKpis').innerHTML = [
-    kpi('Áreas', all.length, 'em ' + new Set(all.map((a) => a.city)).size + ' municípios', 'layers', 'brand'),
-    kpi('Área total', fmt(totalHa, 1), 'hectares', 'map'),
-    kpi('Demanda de projeto', fmt(demand, 1), 'hoje: ' + fmt(todayTotal, 1) + ' m³', 'drop'),
-    kpi('Economia potencial', fmt(pct, 0) + '%', 'R$ ' + fmt(savedRs * 30, 0) + '/mês', 'leaf', pct >= 15 ? 'good' : ''),
-  ].join('');
-
-  const cityValues = [...new Set(all.map((a) => Number(a.city)))];
-  const optsCity = ['<option value="all">Todos os municípios</option>']
-    .concat(cityValues.sort((a, b) => cityOf(a).nome.localeCompare(cityOf(b).nome, 'pt-BR')).map((id) => `<option value="${id}">${esc(cityOf(id).nome)}</option>`));
-  $('#areasCityFilter').innerHTML = optsCity.join('');
-  $('#areasCityFilter').value = areasFilter.city;
-  $('#areasSysFilter').innerHTML = '<option value="all">Todos os sistemas</option>' + Object.entries(SYSTEMS).map(([id, s]) => `<option value="${id}">${esc(s.nome)}</option>`).join('');
-  $('#areasSysFilter').value = areasFilter.system;
-
-  renderAreasTable();
+  const el = $('#areasList');
+  if (!el) return;
+  if (!state.areas.length) {
+    el.innerHTML = `<div class="empty"><div class="ico"><svg width="20" height="20"><use href="#i-layers"/></svg></div><h3>Nenhuma área cadastrada</h3><p>Use a calculadora para dimensionar e salvar suas áreas irrigadas.</p><button class="btn btn-primary btn-sm" data-route="calculator"><svg><use href="#i-calc"/></svg>Abrir calculadora</button></div>`;
+    return;
+  }
+  el.innerHTML = `<div class="grid g2">${state.areas.map((a) => {
+    const p = areaDemand(a);
+    const st = statusFor(p);
+    const cName = CROP_BY_ID.get(a.crop)?.nome || a.crop;
+    return `<div class="card">
+      <div class="card-head">
+        <div><h2>${esc(a.name)}</h2><p>${esc(cityOf(a.city).nome)} · ${esc(cName)} · ${fmt(a.area, 2)} ha</p></div>
+        <span class="badge ${st.cls}">${st.label}</span>
+      </div>
+      <div class="card-body space-y-2">
+        <div class="small muted">Sistema: <b>${esc(SYSTEMS[a.system]?.nome || a.system)}</b> · Solo: <b>${esc(SOILS[a.soil]?.nome || a.soil)}</b></div>
+        <div class="small">Demanda hoje: <b>${fmt(p.volume, 1)} m³</b> (${fmt(p.hours, 1)} h) · Custo: <b>R$ ${fmt(p.cost, 2)}</b></div>
+        <div class="flex gap-2 pt-1">
+          <button type="button" class="btn btn-secondary btn-sm" data-action="irrigateArea" data-id="${a.id}"><svg><use href="#i-drop"/></svg>Irrigar agora</button>
+          <button type="button" class="btn btn-danger btn-sm" data-action="deleteArea" data-id="${a.id}"><svg><use href="#i-trash"/></svg>Excluir</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('')}</div>`;
 }
-
-function filteredAreas() {
-  const q = norm(areasFilter.q);
-  return state.areas.filter((a) => {
-    if (areasFilter.city !== 'all' && Number(a.city) !== Number(areasFilter.city)) return false;
-    if (areasFilter.system !== 'all' && a.system !== areasFilter.system) return false;
-    if (q && !norm(a.name + ' ' + (CROP_BY_ID.get(a.crop)?.nome || '') + ' ' + cityOf(a.city).nome).includes(q)) return false;
-    return true;
-  });
-}
-
-function renderAreasTable() {
-  const list = filteredAreas();
-  const pages = Math.max(1, Math.ceil(list.length / AREAS_PER_PAGE));
-  areasFilter.page = Math.min(areasFilter.page, pages);
-  const slice = list.slice((areasFilter.page - 1) * AREAS_PER_PAGE, areasFilter.page * AREAS_PER_PAGE);
-
-  $('#areasBody').innerHTML = slice.length ? slice.map((a) => {
-    const p = areaDemand(a, false);
-    const today = areaDemand(a);
-    const st = statusFor(today);
-    return `<tr>
-      <td><div class="cell-main">${esc(a.name)}</div><div class="cell-sub">${fmt(a.area, 2)} ha</div></td>
-      <td>${esc(cityOf(a.city).nome)}</td>
-      <td>${esc(CROP_BY_ID.get(a.crop)?.nome || a.crop)}</td>
-      <td class="t-right num">${fmt(a.area, 2)} ha</td>
-      <td>${esc(SYSTEMS[a.system]?.nome || a.system)}</td>
-      <td class="t-right num">${fmt(p.volume, 1)} m³<div class="cell-sub">hoje ${fmt(today.volume, 1)}</div></td>
-      <td class="t-right num">R$ ${fmt(p.cost, 2)}</td>
-      <td><span class="badge ${st.cls}">${st.label}</span></td>
-      <td><div class="row-actions">
-        <button class="icon-btn" title="Registrar irrigação" data-action="irrigate" data-id="${a.id}"><svg><use href="#i-drop"/></svg></button>
-        <button class="icon-btn" title="Remover área" data-action="delArea" data-id="${a.id}"><svg><use href="#i-trash"/></svg></button>
-      </div></td>
-    </tr>`;
-  }).join('') : `<tr><td colspan="9"><div class="empty"><div class="ico"><svg width="20" height="20"><use href="#i-layers"/></svg></div><h3>Nenhuma área encontrada</h3><p>Ajuste os filtros ou cadastre uma nova área.</p><button class="btn btn-primary btn-sm" id="emptyNew">Cadastrar área</button></div></td></tr>`;
-
-  $('#areasPager').innerHTML = pagerHtml(list.length, areasFilter.page, pages, 'areas');
-  const en = $('#emptyNew');
-  if (en) en.addEventListener('click', () => openAreaModal());
-}
-
-function pagerHtml(total, page, pages, scope) {
-  if (!total) return `<span>0 registros</span><span></span>`;
-  const start = (page - 1) * (scope === 'cities' ? 12 : scope === 'adminCities' ? 12 : scope === 'adminAreas' ? 9 : AREAS_PER_PAGE) + 1;
-  return `<span>${start}–${Math.min(total, start + (scope === 'cities' ? 11 : scope === 'adminCities' ? 11 : scope === 'adminAreas' ? 8 : 9))} de ${total}</span>
-    <span class="pager-btns">
-      <button data-page="${scope}" data-dir="-1" ${page <= 1 ? 'disabled' : ''}>‹</button>
-      <button class="active">${page}</button>
-      <button data-page="${scope}" data-dir="1" ${page >= pages ? 'disabled' : ''}>›</button>
-    </span>`;
-}
-
-/* ============================================================
-   Agenda
-   ============================================================ */
-let agendaOffset = 0;
 
 function renderAgenda() {
+  const el = $('#agendaBody');
+  if (!el) return;
   const city = activeCity();
-  const areas = state.areas.filter((a) => Number(a.city) === Number(city.id));
   const days = forecastFor(city.id);
-  const day = days[Math.min(agendaOffset, days.length - 1)];
-  const rows = areas.map((a) => ({ area: a, p: areaForDay(a, day) }));
-  const total = rows.reduce((s, r) => s + r.p.volume, 0);
-  const cost = rows.reduce((s, r) => s + r.p.cost, 0);
-  const today = todayWeather(city.id);
-  const next = rows.length ? Math.min(...rows.map((r) => r.p.interval)) : 0;
-
-  $('#agendaKpis').innerHTML = [
-    kpi('Áreas', areas.length, 'em ' + city.nome, 'layers', 'brand'),
-    kpi('Volume do dia', fmt(total, 1), 'm³', 'drop'),
-    kpi('Custo estimado', 'R$ ' + fmt(cost, 2), 'energia + água', 'calc'),
-    kpi('Próxima irrigação', next ? next + ' dia' + (next > 1 ? 's' : '') : '—', 'recomendação', 'calendar'),
-  ].join('');
-
-  $('#agendaDays').innerHTML = days.map((d, i) => `<button data-day="${i}" class="${i === agendaOffset ? 'active' : ''}">${d.date === todayISO() ? 'Hoje' : dateLong(d.date).split(',')[0]}</button>`).join('');
-  $('#agendaDayTitle').textContent = day.date === todayISO() ? 'Hoje, ' + dateShort(day.date) : dateLong(day.date);
-  $('#agendaDaySub').textContent = (day.live ? 'Previsão ao vivo' : 'Climatologia') + ' · ETo ' + fmt(day.eto, 2) + ' mm/dia · chuva ' + fmt(day.rain, 1) + ' mm';
-
-  $('#agendaBody').innerHTML = rows.length ? rows.map((r) => {
-    const rec = recFor(r.p);
-    return `<tr>
-      <td><div class="cell-main">${esc(r.area.name)}</div><div class="cell-sub">${esc(cityOf(r.area.city).nome)}</div></td>
-      <td>${esc(CROP_BY_ID.get(r.area.crop)?.nome || r.area.crop)}</td>
-      <td class="t-right num">${fmt(r.p.etc, 1)} mm</td>
-      <td class="t-right num">${fmt(day.rain, 1)} mm</td>
-      <td class="t-right num">${fmt(r.p.gross, 1)} mm</td>
-      <td class="t-right num">${fmt(r.p.volume, 1)} m³</td>
-      <td><span class="badge ${rec.cls}">${rec.label}</span></td>
-      <td><button class="btn btn-secondary btn-sm" data-action="irrigateDay" data-id="${r.area.id}" data-date="${day.date}">Registrar</button></td>
-    </tr>`;
-  }).join('') : `<tr><td colspan="8"><div class="empty"><div class="ico"><svg width="20" height="20"><use href="#i-calendar"/></svg></div><h3>Sem áreas neste município</h3><p>Cadastre uma área para gerar a agenda de irrigação.</p><button class="btn btn-primary btn-sm" data-route="areas">Cadastrar área</button></div></td></tr>`;
-
-  renderHistory();
+  const areas = state.areas.filter((a) => Number(a.city) === Number(city.id));
+  if (!areas.length) {
+    el.innerHTML = `<div class="empty"><p>Cadastre uma área em ${esc(city.nome)} para montar a agenda de 7 dias.</p></div>`;
+    return;
+  }
+  el.innerHTML = `<div class="table-wrap"><table>
+    <thead><tr><th>Dia</th><th>Clima</th><th class="t-right">Chuva</th><th class="t-right">ETo</th><th class="t-right">Demanda total</th><th>Ação</th></tr></thead>
+    <tbody>${days.map((d) => {
+      const vol = areas.reduce((s, a) => s + areaForDay(a, d).volume, 0);
+      const action = vol <= 0.05 ? 'Suspender / chuva cobre' : 'Irrigar ' + fmt(vol, 1) + ' m³';
+      const cls = vol <= 0.05 ? 'blue' : 'green';
+      return `<tr>
+        <td>${esc(d.date === todayISO() ? 'Hoje (' + dateShort(d.date) + ')' : dateLong(d.date))}</td>
+        <td>${iconFor(d.rain, d.prob)}</td>
+        <td class="t-right num">${fmt(d.rain, 1)} mm</td>
+        <td class="t-right num">${fmt(d.eto, 2)} mm</td>
+        <td class="t-right num">${fmt(vol, 1)} m³</td>
+        <td><span class="badge ${cls}">${esc(action)}</span></td>
+      </tr>`;
+    }).join('')}</tbody></table></div>`;
 }
-
-function renderHistory() {
-  const list = state.history.slice().reverse().slice(0, 12);
-  $('#histCount').textContent = state.history.length + ' registro' + (state.history.length === 1 ? '' : 's');
-  $('#agendaHistory').innerHTML = list.length ? `<div class="table-wrap"><table>
-    <thead><tr><th>Data</th><th>Área</th><th>Município</th><th class="t-right">Volume</th><th class="t-right">Custo</th></tr></thead>
-    <tbody>${list.map((h) => `<tr><td>${dateShort(h.date)}</td><td>${esc(h.name)}</td><td>${esc(cityOf(h.city).nome)}</td><td class="t-right num">${fmt(h.m3, 1)} m³</td><td class="t-right num">R$ ${fmt(h.cost || 0, 2)}</td></tr>`).join('')}</tbody>
-  </table></div>` : '<div class="empty" style="padding:24px"><p>Nenhuma irrigação registrada ainda.</p></div>';
-}
-
-/* ============================================================
-   Climate
-   ============================================================ */
-const citiesExplorer = { q: '', page: 1 };
-const CITIES_PER_PAGE = 12;
 
 function renderClimate() {
   const city = activeCity();
-  const rain = city.chuva;
-  const etoMes = city.eto.map((v, i) => v * DAYS[i]);
-  const janApr = rain.slice(0, 4).reduce((a, b) => a + b, 0);
-  const share = city.chuvaAnual > 0 ? (janApr / city.chuvaAnual) * 100 : 0;
-  const peak = city.eto.indexOf(Math.max(...city.eto));
-  const dry = MONTHS.filter((m, i) => rain[i] < 60);
-
-  $('#climateKpis').innerHTML = [
-    kpi('População', fmt0(city.pop), 'habitantes (IBGE 2023)', 'user', 'brand'),
-    kpi('Chuva anual', fmt0(city.chuvaAnual), 'mm/ano', 'cloud'),
-    kpi('ETo anual', fmt0(city.etoAnual), 'mm/ano', 'sun'),
-    kpi('Déficit hídrico', fmt0(city.deficit), 'mm/ano', 'alert', city.deficit > 400 ? 'warn' : ''),
-  ].join('');
-
-  $('#climateChartSub').textContent = city.nome + ' · médias 2001–2025';
-  $('#climateTableSub').textContent = city.nome + ' · série mensal';
-  renderChart($('#climateChart'), city);
-
-  $('#climateInsights').innerHTML = `
-    <ul class="list-clean">
-      <li><svg><use href="#i-check"/></svg><span><strong>${fmt(share, 0)}%</strong> da chuva cai entre janeiro e abril.</span></li>
-      <li><svg><use href="#i-check"/></svg><span><strong>${dry.length} meses</strong> com menos de 60 mm (${dry.join(', ')}).</span></li>
-      <li><svg><use href="#i-check"/></svg><span>Pico de ETo em <strong>${MONTHS[peak]}</strong>: ${fmt(city.eto[peak], 2)} mm/dia.</span></li>
-      <li><svg><use href="#i-check"/></svg><span>Déficit anual de <strong>${fmt0(city.deficit)} mm</strong>: a irrigação repõe o que a chuva não cobre.</span></li>
-    </ul>
-    <div class="notice" style="margin-top:12px"><svg><use href="#i-info"/></svg><span>Quanto maior o déficit, maior a dependência de irrigação e de uma fonte confiável.</span></div>`;
-
-  $('#climateTable').innerHTML = MONTHS.map((m, i) => {
-    const bal = rain[i] - etoMes[i];
-    const cond = bal < -80 ? '<span class="badge red">déficit alto</span>' : bal < 0 ? '<span class="badge amber">déficit</span>' : '<span class="badge green">superávit</span>';
-    return `<tr>
-      <td><strong>${m}</strong></td>
-      <td class="t-right num">${fmt(rain[i], 0)} mm</td>
-      <td class="t-right num">${fmt(etoMes[i], 0)} mm</td>
-      <td class="t-right num">${fmt(city.t2m[i], 1)} °C</td>
-      <td class="t-right num" style="color:${bal < 0 ? 'var(--amber)' : 'var(--brand-700)'}">${bal > 0 ? '+' : ''}${fmt(bal, 0)} mm</td>
-      <td>${cond}</td>
-    </tr>`;
-  }).join('');
-
-  citiesExplorer.q = $('#citiesSearch') ? $('#citiesSearch').value : citiesExplorer.q;
-  renderCitiesTable();
+  renderChart($('#climChart'), city);
+  const q = norm($('#citySearch')?.value || '');
+  const list = activeCities().filter((c) => !q || norm(c.nome).includes(q)).slice(0, 60);
+  const tbody = $('#citiesBody');
+  if (!tbody) return;
+  tbody.innerHTML = list.map((c) => `
+    <tr>
+      <td><b>${esc(c.nome)}</b></td>
+      <td class="t-right num">${cityPopulation(c)}</td>
+      <td class="t-right num">${cityRain(c)}</td>
+      <td class="t-right num">${cityEto(c)}</td>
+      <td class="t-right"><button type="button" class="btn btn-secondary btn-sm" data-action="selectCity" data-id="${c.id}">Usar</button></td>
+    </tr>`).join('');
 }
 
-function renderCitiesTable() {
-  const q = norm(citiesExplorer.q);
-  const list = CITIES.filter((c) => !q || norm(c.nome).includes(q));
-  const pages = Math.max(1, Math.ceil(list.length / CITIES_PER_PAGE));
-  citiesExplorer.page = Math.min(citiesExplorer.page, pages);
-  const slice = list.slice((citiesExplorer.page - 1) * CITIES_PER_PAGE, citiesExplorer.page * CITIES_PER_PAGE);
-  $('#citiesBody').innerHTML = slice.map((c) => `<tr>
-    <td><div class="cell-main">${esc(c.nome)}</div><div class="cell-sub">${c.id}</div></td>
-    <td class="t-right num">${fmt0(c.pop)}</td>
-    <td class="t-right num">${fmt0(c.chuvaAnual)} mm</td>
-    <td class="t-right num">${fmt0(c.etoAnual)} mm</td>
-    <td class="t-right num" style="color:var(--amber)">${fmt0(c.deficit)} mm</td>
-    <td class="t-right num">${c.mesesSecos}</td>
-    <td class="t-right"><button class="btn btn-secondary btn-sm" data-action="useCity" data-id="${c.id}">${Number(c.id) === Number(state.activeCity) ? 'Ativo' : 'Usar'}</button></td>
-  </tr>`).join('');
-  $('#citiesPager').innerHTML = `<span>${(citiesExplorer.page - 1) * CITIES_PER_PAGE + 1}–${Math.min(list.length, citiesExplorer.page * CITIES_PER_PAGE)} de ${list.length}</span>
-    <span class="pager-btns"><button data-page="cities" data-dir="-1" ${citiesExplorer.page <= 1 ? 'disabled' : ''}>‹</button><button class="active">${citiesExplorer.page}</button><button data-page="cities" data-dir="1" ${citiesExplorer.page >= pages ? 'disabled' : ''}>›</button></span>`;
-}
-
-/* ============================================================
-   Reports
-   ============================================================ */
 function renderReports() {
-  const rows = state.areas.map((a) => ({ area: a, p: areaDemand(a, false) }));
-  const demand = rows.reduce((s, r) => s + r.p.volume, 0);
-  const cost = rows.reduce((s, r) => s + r.p.cost, 0);
-  let design = 0, current = 0;
-  rows.forEach((r) => {
-    const nr = compute({ crop: r.area.crop, phase: 'prod', area: r.area.area, system: r.area.system, soil: r.area.soil, eto: r.p.eto, rain: 0, flow: r.area.flow || 6, tariff: state.settings.tariff, kwh: state.settings.kwh, water: 0 });
-    design += (nr.net / 0.7) * 10 * Number(r.area.area);
-    current += nr.volume;
-  });
-  const saved = Math.max(0, design - current);
-  const savedRs = saved * (state.settings.kwh * state.settings.tariff + state.settings.water);
-
-  $('#reportKpis').innerHTML = [
-    kpi('Demanda de projeto', fmt(demand, 1), 'm³/dia', 'drop', 'brand'),
-    kpi('Custo diário', 'R$ ' + fmt(cost, 2), 'energia + água', 'calc'),
-    kpi('Projeção mensal', fmt(demand * 30, 0), 'm³/mês', 'calendar'),
-    kpi('Economia potencial', 'R$ ' + fmt(savedRs * 30, 0), 'por mês vs. aspersão', 'leaf', savedRs > 0 ? 'good' : ''),
-  ].join('');
-
-  $('#reportAreasCount').textContent = rows.length + ' área' + (rows.length === 1 ? '' : 's');
-  $('#reportAreas').innerHTML = rows.length ? rows.map((r) => `<tr>
-    <td><div class="cell-main">${esc(r.area.name)}</div><div class="cell-sub">${esc(cityOf(r.area.city).nome)}</div></td>
-    <td>${esc(CROP_BY_ID.get(r.area.crop)?.nome || r.area.crop)}</td>
-    <td class="t-right num">${fmt(r.p.volume, 1)}</td>
-    <td class="t-right num">R$ ${fmt(r.p.cost, 2)}</td>
-    <td class="t-right num">R$ ${fmt(r.p.cost * 30, 0)}</td>
-  </tr>`).join('') : '<tr><td colspan="5"><div class="empty"><p>Nenhuma área cadastrada.</p></div></td></tr>';
-
-  $('#reportProjection').innerHTML = `
-    <div class="hbar"><div class="top"><span>Volume mensal</span><span class="v">${fmt(demand * 30, 0)} m³</span></div><div class="track"><i style="width:100%"></i></div></div>
-    <div class="hbar"><div class="top"><span>Custo mensal estimado</span><span class="v">R$ ${fmt(cost * 30, 2)}</span></div><div class="track"><i style="width:${cost > 0 ? 100 : 0}%;background:var(--amber)"></i></div></div>
-    <div class="divider"></div>
-    <div class="sum-row"><span class="k">Economia de água vs. aspersão</span><span class="v">${fmt(saved, 1)} m³/dia</span></div>
-    <div class="sum-row"><span class="k">Economia financeira estimada</span><span class="v">R$ ${fmt(savedRs, 2)}/dia</span></div>
-    <div class="sum-row"><span class="k">Projeção em 12 meses</span><span class="v">R$ ${fmt(savedRs * 365, 0)}</span></div>
-    <p class="src">Premissas: 30 dias/mês, ${fmt(state.settings.kwh, 2)} kWh/m³ e R$ ${fmt(state.settings.tariff, 2)}/kWh${state.settings.water > 0 ? ' + R$ ' + fmt(state.settings.water, 2) + '/m³ de água' : ''}.</p>`;
-
-  const hist = state.history.slice().reverse();
-  $('#reportHistory').innerHTML = hist.length ? hist.slice(0, 30).map((h) => `<tr>
-    <td>${dateShort(h.date)}</td><td>${esc(h.name)}</td><td>${esc(cityOf(h.city).nome)}</td><td class="t-right num">${fmt(h.m3, 1)} m³</td>
-  </tr>`).join('') : '<tr><td colspan="4"><div class="empty"><p>Nenhuma irrigação registrada.</p></div></td></tr>';
+  const el = $('#reportHistory');
+  if (!el) return;
+  if (!state.history.length) {
+    el.innerHTML = `<p class="small muted">Nenhuma irrigação registrada ainda.</p>`;
+    return;
+  }
+  el.innerHTML = `<div class="table-wrap"><table>
+    <thead><tr><th>Data</th><th>Área</th><th>Cultura</th><th class="t-right">Volume</th><th class="t-right">Custo</th></tr></thead>
+    <tbody>${state.history.map((h) => `
+      <tr>
+        <td>${esc(dateShort(h.date))}</td>
+        <td>${esc(h.areaName)}</td>
+        <td>${esc(h.crop)}</td>
+        <td class="t-right num">${fmt(h.volume, 1)} m³</td>
+        <td class="t-right num">R$ ${fmt(h.cost, 2)}</td>
+      </tr>`).join('')}</tbody></table></div>`;
 }
 
-/* ============================================================
-   Admin
-   ============================================================ */
-const adminState = { tab: 'overview', cityQ: '', cityPage: 1, areaQ: '', areaPage: 1 };
-const ADMIN_PER_PAGE = 12;
+function renderData() {
+  const el = $('#dataSummary');
+  if (!el) return;
+  el.innerHTML = `<p class="small muted">Municípios carregados: <b>${CITIES.length}</b> · Culturas cadastradas: <b>${CROPS.length}</b> · Sistemas: <b>${Object.keys(SYSTEMS).length}</b>.</p>`;
+}
 
 function renderAdmin() {
-  const login = $('#adminLogin');
-  const panel = $('#adminPanel');
+  const el = $('#adminLog');
+  if (!el) return;
   if (!isAdmin()) {
-    login.hidden = false;
-    panel.hidden = true;
-    setTimeout(() => $('#loginPass')?.focus(), 80);
+    el.innerHTML = `<div class="notice warn"><svg><use href="#i-lock"/></svg><span>Entre como <strong>admin</strong> para gerenciar configurações e logs.</span></div>`;
     return;
   }
-  login.hidden = true;
-  panel.hidden = false;
-  $('#adminSession').textContent = 'Sessão ativa · ' + session.user;
-  $$('#adminNav button').forEach((b) => b.classList.toggle('active', b.dataset.adminTab === adminState.tab));
-  $$('.admin-tab').forEach((t) => { t.hidden = t.id !== 'admin' + adminState.tab.charAt(0).toUpperCase() + adminState.tab.slice(1); });
-  renderAdminTab(adminState.tab);
+  el.innerHTML = state.admin.log.length
+    ? `<ul class="space-y-1 small">${state.admin.log.slice(0, 25).map((item) => `<li><b>[${esc(timeShort(item.ts))}]</b> ${esc(item.msg)}</li>`).join('')}</ul>`
+    : `<p class="small muted">Sem registros no log.</p>`;
 }
 
-function setAdminTab(tab) {
-  adminState.tab = tab;
-  $$('#adminNav button').forEach((b) => b.classList.toggle('active', b.dataset.adminTab === tab));
-  $$('.admin-tab').forEach((t) => { t.hidden = t.id !== 'admin' + tab.charAt(0).toUpperCase() + tab.slice(1); });
-  renderAdminTab(tab);
+function openSidebar() {
+  $('#sidebar')?.classList.add('open');
+  $('#sidebarBackdrop')?.classList.add('open');
+}
+function closeSidebar() {
+  $('#sidebar')?.classList.remove('open');
+  $('#sidebarBackdrop')?.classList.remove('open');
 }
 
-function renderAdminTab(tab) {
-  if (tab === 'overview') renderAdminOverview();
-  if (tab === 'cities') renderAdminCities();
-  if (tab === 'areas') renderAdminAreas();
-  if (tab === 'settings') renderAdminSettings();
-  if (tab === 'audit') renderAdminAudit();
-}
-
-function allAreaRows() {
-  return state.areas.map((a) => ({ area: a, p: areaDemand(a, false) }));
-}
-
-function renderAdminOverview() {
-  const rows = allAreaRows();
-  const ha = rows.reduce((s, r) => s + Number(r.area.area), 0);
-  const demand = rows.reduce((s, r) => s + r.p.volume, 0);
-  const cost = rows.reduce((s, r) => s + r.p.cost, 0);
-  const active = activeCities().length;
-  $('#adminKpis').innerHTML = [
-    kpi('Municípios ativos', active, 'de 224 no Piauí', 'map', 'brand'),
-    kpi('Áreas', rows.length, 'cadastradas', 'layers'),
-    kpi('Área total', fmt(ha, 1), 'hectares', 'grid'),
-    kpi('Demanda total', fmt(demand, 1), 'm³/dia', 'drop'),
-    kpi('Custo total', 'R$ ' + fmt(cost, 2), 'por dia', 'calc'),
-  ].join('');
-
-  const byCity = {};
-  rows.forEach((r) => {
-    const id = Number(r.area.city);
-    byCity[id] = (byCity[id] || 0) + r.p.volume;
-  });
-  const top = Object.entries(byCity).sort((a, b) => b[1] - a[1]).slice(0, 5);
-  const max = Math.max(...top.map((t) => t[1]), 1);
-  $('#adminTopCities').innerHTML = top.length ? top.map(([id, v]) => `
-    <div class="hbar"><div class="top"><span>${esc(cityOf(id).nome)}</span><span class="v">${fmt(v, 1)} m³/dia</span></div><div class="track"><i style="width:${(v / max) * 100}%"></i></div></div>`).join('')
-    : '<div class="empty" style="padding:20px"><p>Sem áreas cadastradas.</p></div>';
-
-  const recent = state.admin.log.slice(0, 6);
-  $('#adminRecent').innerHTML = recent.length ? recent.map((l) => `<div class="log-item"><span class="dot"></span><div class="msg">${esc(l.msg)}</div><span class="ts">${timeShort(l.ts)}</span></div>`).join('') : '<p class="small muted">Nenhuma atividade registrada.</p>';
-
-  $('#adminCoverage').innerHTML = `
-    <div class="sum-row"><span class="k">Municípios disponíveis</span><span class="v">224</span></div>
-    <div class="sum-row"><span class="k">Municípios ativos</span><span class="v">${active}</span></div>
-    <div class="sum-row"><span class="k">Municípios desativados</span><span class="v">${state.admin.inactive.length}</span></div>
-    <div class="sum-row"><span class="k">Municípios com áreas</span><span class="v">${new Set(state.areas.map((a) => a.city)).size}</span></div>
-    <div class="sum-row"><span class="k">Fonte climática</span><span class="v">NASA POWER</span></div>
-    <p class="src">Cobertura de 100% dos municípios do Piauí com climatologia 2001–2025.</p>`;
-}
-
-function renderAdminCities() {
-  const q = norm(adminState.cityQ);
-  const list = CITIES.filter((c) => !q || norm(c.nome).includes(q));
-  const pages = Math.max(1, Math.ceil(list.length / ADMIN_PER_PAGE));
-  adminState.cityPage = Math.min(adminState.cityPage, pages);
-  const slice = list.slice((adminState.cityPage - 1) * ADMIN_PER_PAGE, adminState.cityPage * ADMIN_PER_PAGE);
-  const off = new Set(state.admin.inactive.map(Number));
-  $('#adminCitiesBody').innerHTML = slice.map((c) => `<tr>
-    <td class="num muted">${c.id}</td>
-    <td><div class="cell-main">${esc(c.nome)}</div><div class="cell-sub">${fmt0(c.chuvaAnual)} mm/ano · ${fmt0(c.etoAnual)} mm ETo</div></td>
-    <td class="t-right num">${fmt0(c.pop)}</td>
-    <td class="t-right num">${fmt0(c.chuvaAnual)}</td>
-    <td class="t-right num">${fmt0(c.etoAnual)}</td>
-    <td><label class="switch"><input type="checkbox" data-city-toggle="${c.id}" ${off.has(c.id) ? '' : 'checked'}><i></i></label></td>
-    <td class="t-right"><button class="btn btn-secondary btn-sm" data-action="useCity" data-id="${c.id}">Abrir</button></td>
-  </tr>`).join('');
-  $('#adminCitiesPager').innerHTML = `<span>${(adminState.cityPage - 1) * ADMIN_PER_PAGE + 1}–${Math.min(list.length, adminState.cityPage * ADMIN_PER_PAGE)} de ${list.length}</span>
-    <span class="pager-btns"><button data-page="adminCities" data-dir="-1" ${adminState.cityPage <= 1 ? 'disabled' : ''}>‹</button><button class="active">${adminState.cityPage}</button><button data-page="adminCities" data-dir="1" ${adminState.cityPage >= pages ? 'disabled' : ''}>›</button></span>`;
-}
-
-function renderAdminAreas() {
-  const q = norm(adminState.areaQ);
-  const list = state.areas.filter((a) => !q || norm(a.name + ' ' + cityOf(a.city).nome + ' ' + (CROP_BY_ID.get(a.crop)?.nome || '')).includes(q));
-  const pages = Math.max(1, Math.ceil(list.length / 9));
-  adminState.areaPage = Math.min(adminState.areaPage, pages);
-  const slice = list.slice((adminState.areaPage - 1) * 9, adminState.areaPage * 9);
-  $('#adminAreasBody').innerHTML = slice.length ? slice.map((a) => {
-    const p = areaDemand(a, false);
-    return `<tr>
-      <td><div class="cell-main">${esc(a.name)}</div><div class="cell-sub">${a.id}</div></td>
-      <td>${esc(cityOf(a.city).nome)}</td>
-      <td>${esc(CROP_BY_ID.get(a.crop)?.nome || a.crop)}</td>
-      <td class="t-right num">${fmt(a.area, 2)} ha</td>
-      <td>${esc(SYSTEMS[a.system]?.nome || a.system)}</td>
-      <td class="t-right num">${fmt(p.volume, 1)} m³</td>
-      <td class="t-right"><button class="icon-btn" title="Remover" data-action="adminDelArea" data-id="${a.id}"><svg><use href="#i-trash"/></svg></button></td>
-    </tr>`;
-  }).join('') : '<tr><td colspan="7"><div class="empty"><p>Nenhuma área encontrada.</p></div></td></tr>';
-  $('#adminAreasPager').innerHTML = `<span>${list.length ? (adminState.areaPage - 1) * 9 + 1 : 0}–${Math.min(list.length, adminState.areaPage * 9)} de ${list.length}</span>
-    <span class="pager-btns"><button data-page="adminAreas" data-dir="-1" ${adminState.areaPage <= 1 ? 'disabled' : ''}>‹</button><button class="active">${adminState.areaPage}</button><button data-page="adminAreas" data-dir="1" ${adminState.areaPage >= pages ? 'disabled' : ''}>›</button></span>`;
-}
-
-function renderAdminSettings() {
-  $('#setTariff').value = state.settings.tariff;
-  $('#setKwh').value = state.settings.kwh;
-  $('#setSource').value = state.settings.source;
-  $('#setWater').value = state.settings.water;
-}
-
-function renderAdminAudit() {
-  $('#auditList').innerHTML = state.admin.log.length ? state.admin.log.map((l) => `<div class="log-item"><span class="dot"></span><div class="msg">${esc(l.msg)}</div><span class="ts">${timeShort(l.ts)}</span></div>`).join('') : '<div class="empty" style="padding:24px"><p>Nenhum evento registrado.</p></div>';
-}
-
-/* ============================================================
-   Modals
-   ============================================================ */
-let confirmCallback = null;
-function openModal(id) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  el.classList.add('open');
-  document.body.style.overflow = 'hidden';
-}
-function closeModal(id) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  el.classList.remove('open');
-  document.body.style.overflow = '';
-  if (id === 'confirmModal') confirmCallback = null;
-}
-function confirmAction(title, text, cb) {
-  $('#confirmTitle').textContent = title;
-  $('#confirmText').textContent = text;
-  confirmCallback = cb;
-  openModal('confirmModal');
-}
-
-function openCityModal() {
-  const input = $('#citySearch');
-  input.value = '';
-  renderCityList();
-  openModal('cityModal');
-  setTimeout(() => input.focus(), 80);
-}
-function renderCityList() {
-  const q = norm($('#citySearch').value);
-  const admin = isAdmin();
-  const off = new Set(state.admin.inactive.map(Number));
-  const list = CITIES.filter((c) => (admin || !off.has(c.id)) && (!q || norm(c.nome).includes(q)));
-  $('#cityCount').textContent = list.length + ' município' + (list.length === 1 ? '' : 's');
-  $('#cityList').innerHTML = list.length ? list.map((c) => `
-    <button class="city-row ${Number(c.id) === Number(state.activeCity) ? 'sel' : ''}" data-city="${c.id}">
-      <div class="info"><div class="nm">${esc(c.nome)} ${off.has(c.id) ? '<span class="badge gray">inativo</span>' : ''}</div><div class="meta">${fmt0(c.pop)} hab · ${fmt0(c.chuvaAnual)} mm chuva · ${fmt0(c.etoAnual)} mm ETo</div></div>
-      <div class="vals"><b>${c.mesesSecos} meses secos</b>déficit ${fmt0(c.deficit)} mm</div>
-    </button>`).join('') : '<div class="empty" style="padding:24px"><p>Nenhum município encontrado.</p></div>';
-}
-
-function openAreaModal() {
-  const sel = $('#aCity');
-  const active = activeCities();
-  sel.innerHTML = active.map((c) => `<option value="${c.id}">${esc(c.nome)}</option>`).join('');
-  sel.value = String(state.activeCity);
-  $('#aCrop').innerHTML = CROPS.map((c) => `<option value="${c.id}">${esc(c.nome)}</option>`).join('');
-  $('#aSystem').innerHTML = Object.entries(SYSTEMS).map(([id, s]) => `<option value="${id}">${esc(s.nome)}</option>`).join('');
-  $('#aName').value = '';
-  $('#aArea').value = '0.5';
-  $('#aFlow').value = '6';
-  $('#aSource').value = state.settings.source;
-  $('#aPlanting').value = todayISO();
-  $('#aCrop').value = 'alface';
-  $('#aSystem').value = 'gotejamento';
-  openModal('areaModal');
-  setTimeout(() => $('#aName').focus(), 80);
-}
-
-function createArea(data) {
-  const area = {
-    id: state.nextId++,
-    name: String(data.name || '').trim() || 'Área sem nome',
-    city: CITY_BY_ID.has(Number(data.city)) ? Number(data.city) : Number(state.activeCity),
-    crop: data.crop,
-    phase: 'prod',
-    area: clamp(data.area, 0.01, 5000),
-    system: data.system,
-    soil: data.soil,
-    planting: data.planting || todayISO(),
-    source: clamp(data.source, 0.5, 10000),
-    flow: clamp(data.flow, 0.1, 500),
-    createdAt: new Date().toISOString(),
-  };
-  state.areas.push(area);
-  state.admin.demo = false;
-  save();
-  log('area_add', `Área "${area.name}" cadastrada em ${cityOf(area.city).nome}`);
-  return area;
-}
-
-/* ============================================================
-   CSV
-   ============================================================ */
-function download(name, text) {
-  const blob = new Blob(['\uFEFF' + text], { type: 'text/csv;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = name;
-  document.body.appendChild(a);
-  a.click();
-  setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 400);
-}
-const csvCell = (v) => '"' + String(v ?? '').replace(/"/g, '""') + '"';
-function exportAreas() {
-  const rows = [['area', 'municipio', 'cultura', 'hectares', 'sistema', 'solo', 'volume_m3_dia', 'custo_rs_dia', 'custo_rs_mes']];
-  state.areas.forEach((a) => {
-    const p = areaDemand(a, false);
-    rows.push([a.name, cityOf(a.city).nome, CROP_BY_ID.get(a.crop)?.nome || a.crop, fmt(a.area, 2).replace('.', ','), SYSTEMS[a.system]?.nome || a.system, SOILS[a.soil]?.nome || a.soil, fmt(p.volume, 1).replace('.', ','), fmt(p.cost, 2).replace('.', ','), fmt(p.cost * 30, 2).replace('.', ',')]);
-  });
-  download('agroagua_areas_piaui.csv', rows.map((r) => r.map(csvCell).join(';')).join('\r\n'));
-  toast('CSV das áreas gerado.');
-}
-function exportHistory() {
-  const rows = [['data', 'area', 'municipio', 'volume_m3', 'custo_rs']];
-  state.history.forEach((h) => rows.push([h.date, h.name, cityOf(h.city).nome, fmt(h.m3, 1).replace('.', ','), fmt(h.cost || 0, 2).replace('.', ',')]));
-  download('agroagua_historico_piaui.csv', rows.map((r) => r.map(csvCell).join(';')).join('\r\n'));
-  toast('Histórico exportado.');
-}
-function exportClimate() {
-  const c = activeCity();
-  const rows = [['mes', 'chuva_mm', 'eto_mm_dia', 'eto_mm_mes', 'temperatura_media_c']];
-  MONTHS.forEach((m, i) => rows.push([m, fmt(c.chuva[i], 1).replace('.', ','), fmt(c.eto[i], 2).replace('.', ','), fmt(c.eto[i] * DAYS[i], 0), fmt(c.t2m[i], 1).replace('.', ',')]));
-  download('clima_' + norm(c.nome).replace(/\s+/g, '_') + '.csv', rows.map((r) => r.map(csvCell).join(';')).join('\r\n'));
-  toast('Série climática exportada.');
-}
-
-/* ============================================================
-   Irrigation records
-   ============================================================ */
-function recordIrrigation(area, date, volume, cost) {
-  state.history.push({
-    id: Date.now() + Math.random(),
-    areaId: area.id,
-    name: area.name,
-    city: area.city,
-    date: date || todayISO(),
-    m3: volume,
-    cost: cost || 0,
-  });
-  if (state.history.length > 500) state.history = state.history.slice(-500);
-  save();
-  log('irrig', `Irrigação registrada em "${area.name}" (${fmt(volume, 1)} m³)`);
-}
-
-/* ============================================================
-   Events
-   ============================================================ */
 function bindEvents() {
-  // router
   document.addEventListener('click', (e) => {
-    const adminTabBtn = e.target.closest('[data-admin-tab]');
-    if (adminTabBtn && !adminTabBtn.closest('#adminNav')) { setAdminTab(adminTabBtn.dataset.adminTab); return; }
     const routeBtn = e.target.closest('[data-route]');
-    if (routeBtn) { navigate(routeBtn.dataset.route); return; }
-    const closeBtn = e.target.closest('[data-close]');
-    if (closeBtn) { closeModal(closeBtn.dataset.close); return; }
-    const pageBtn = e.target.closest('[data-page]');
-    if (pageBtn) {
-      const scope = pageBtn.dataset.page;
-      const dir = Number(pageBtn.dataset.dir);
-      if (scope === 'areas') { areasFilter.page += dir; renderAreasTable(); }
-      if (scope === 'cities') { citiesExplorer.page += dir; renderCitiesTable(); }
-      if (scope === 'adminCities') { adminState.cityPage += dir; renderAdminCities(); }
-      if (scope === 'adminAreas') { adminState.areaPage += dir; renderAdminAreas(); }
+    if (routeBtn) {
+      e.preventDefault();
+      navigate(routeBtn.dataset.route);
       return;
     }
-    const action = e.target.closest('[data-action]');
-    if (action) handleAction(action.dataset.action, action);
-  });
-
-  // sidebar / menu
-  $('#menuBtn').addEventListener('click', () => { $('#sidebar').classList.add('open'); $('#sidebarBackdrop').classList.add('show'); });
-  $('#sidebarBackdrop').addEventListener('click', closeSidebar);
-
-  // city modal
-  $('#cityBtn').addEventListener('click', openCityModal);
-  $('#citySearch').addEventListener('input', renderCityList);
-  $('#cityList').addEventListener('click', (e) => {
-    const row = e.target.closest('[data-city]');
-    if (row) selectCity(Number(row.dataset.city));
-  });
-
-  // user / login
-  $('#userBtn').addEventListener('click', () => navigate('admin'));
-  $('#loginForm').addEventListener('submit', (e) => {
-    e.preventDefault();
-    const ok = doLogin($('#loginUser').value, $('#loginPass').value);
-    if (!ok) {
-      $('#loginError').classList.add('show');
-      $('#loginPass').value = '';
-      return;
-    }
-    $('#loginError').classList.remove('show');
-    $('#loginPass').value = '';
-    renderShell();
-    renderAdmin();
-    toast('Bem-vindo, admin.');
-  });
-  $('#adminLogout').addEventListener('click', () => {
-    doLogout();
-    renderShell();
-    navigate('overview');
-    toast('Sessão encerrada.');
-  });
-
-  // area modal
-  $('#areasNew').addEventListener('click', openAreaModal);
-  $('#areaForm').addEventListener('submit', (e) => {
-    e.preventDefault();
-    const area = createArea({
-      name: $('#aName').value, city: $('#aCity').value, crop: $('#aCrop').value,
-      area: $('#aArea').value, system: $('#aSystem').value, soil: $('#aSoil').value,
-      planting: $('#aPlanting').value, source: $('#aSource').value, flow: $('#aFlow').value,
-    });
-    closeModal('areaModal');
-    renderShell();
-    renderAreas();
-    navigate('areas');
-    toast('Área "' + area.name + '" adicionada.');
-  });
-
-  // confirm
-  $('#confirmOk').addEventListener('click', () => {
-    const cb = confirmCallback;
-    closeModal('confirmModal');
-    if (cb) cb();
-  });
-
-  // areas
-  $('#areasSearch').addEventListener('input', (e) => { areasFilter.q = e.target.value; areasFilter.page = 1; renderAreasTable(); });
-  $('#areasCityFilter').addEventListener('change', (e) => { areasFilter.city = e.target.value; areasFilter.page = 1; renderAreasTable(); });
-  $('#areasSysFilter').addEventListener('change', (e) => { areasFilter.system = e.target.value; areasFilter.page = 1; renderAreasTable(); });
-  $('#areasExport').addEventListener('click', exportAreas);
-
-  // agenda
-  $('#agendaDays').addEventListener('click', (e) => {
-    const b = e.target.closest('[data-day]');
-    if (!b) return;
-    agendaOffset = Number(b.dataset.day);
-    renderAgenda();
-  });
-  $('#agendaRefresh').addEventListener('click', () => {
-    ensureWeather(state.activeCity, true).then(() => { renderShell(); renderAgenda(); toast('Clima atualizado.'); });
-  });
-
-  // climate
-  $('#climateChange').addEventListener('click', openCityModal);
-  $('#climateExport').addEventListener('click', exportClimate);
-  $('#citiesSearch').addEventListener('input', (e) => { citiesExplorer.q = e.target.value; citiesExplorer.page = 1; renderCitiesTable(); });
-
-  // reports
-  $('#reportExport').addEventListener('click', exportAreas);
-  $('#reportHistoryExport').addEventListener('click', exportHistory);
-  $('#reportPrint').addEventListener('click', () => window.print());
-
-  // wizard static fields
-  const map = { wName: 'name', wArea: 'area', wFlow: 'flow', wSource: 'source', wPlanting: 'planting', wPhase: 'phase', wSoil: 'soil', wEto: 'eto', wRain: 'rain', wTariff: 'tariff' };
-  Object.entries(map).forEach(([id, key]) => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.addEventListener('input', () => {
-      if (key === 'eto') wizard.draft.etoTouched = true;
-      if (key === 'rain') wizard.draft.rainTouched = true;
-      wizard.draft[key] = el.type === 'number' ? Number(el.value) : el.value;
-      $('#wKc').value = fmt(kcFor(CROP_BY_ID.get(wizard.draft.crop), wizard.draft.phase), 2);
-      renderWizardSummary();
-      if (wizard.step === 4) renderWizardResult();
-    });
-    el.addEventListener('change', () => {
-      if (key === 'eto') wizard.draft.etoTouched = true;
-      if (key === 'rain') wizard.draft.rainTouched = true;
-      wizard.draft[key] = el.type === 'number' ? Number(el.value) : el.value;
+    const cropBtn = e.target.closest('[data-crop]');
+    if (cropBtn && wizard) {
+      wizard.draft.crop = cropBtn.dataset.crop;
       renderWizard();
-    });
-  });
-  $('#wCropSearch').addEventListener('input', (e) => { wizard.cropSearch = e.target.value; renderCropGrid(); });
-  $('#wCropGrid').addEventListener('click', (e) => {
-    const card = e.target.closest('[data-crop]');
-    if (!card) return;
-    wizard.draft.crop = card.dataset.crop;
-    renderCropGrid();
-    $('#wKc').value = fmt(kcFor(CROP_BY_ID.get(wizard.draft.crop), wizard.draft.phase), 2);
-    renderWizardSummary();
-  });
-  $('#wSysGrid').addEventListener('click', (e) => {
-    const card = e.target.closest('[data-system]');
-    if (!card) return;
-    wizard.draft.system = card.dataset.system;
-    renderSystemGrid();
-    renderWizardSummary();
-  });
-  $('#wChangeCity').addEventListener('click', openCityModal);
-  $('#wizBack').addEventListener('click', () => { if (wizard.step > 1) { wizard.step--; renderWizard(); } });
-  $('#wizNext').addEventListener('click', () => {
-    if (!validateStep(wizard.step)) return;
-    if (wizard.step < 4) { wizard.step++; renderWizard(); }
-  });
-  $$('#wizSteps .step').forEach((el) => el.addEventListener('click', () => {
-    const n = Number(el.dataset.step);
-    if (n < wizard.step) { wizard.step = n; renderWizard(); }
-  }));
-  $('#wSave').addEventListener('click', () => {
-    const d = wizard.draft;
-    const area = createArea({ ...d, name: d.name || 'Área ' + cityOf(d.city).nome });
-    renderShell();
-    renderAreas();
-    navigate('areas');
-    toast('Área "' + area.name + '" salva.');
-  });
-  $('#wRegister').addEventListener('click', () => {
-    const d = wizard.draft;
-    const p = compute({ ...d, kwh: state.settings.kwh, water: state.settings.water });
-    recordIrrigation({ id: 0, name: d.name || 'Cálculo avulso', city: d.city }, todayISO(), p.volume, p.cost);
-    toast('Irrigação registrada: ' + fmt(p.volume, 1) + ' m³.');
-    renderHistory();
-  });
-  $('#wReset').addEventListener('click', () => { wizard = { step: 1, draft: newDraft(), cropSearch: '' }; renderWizard(); });
-
-  // admin nav
-  $('#adminNav').addEventListener('click', (e) => {
-    const b = e.target.closest('[data-admin-tab]');
-    if (!b) return;
-    setAdminTab(b.dataset.adminTab);
-  });
-  $('#adminCitiesSearch').addEventListener('input', (e) => { adminState.cityQ = e.target.value; adminState.cityPage = 1; renderAdminCities(); });
-  $('#adminAreasSearch').addEventListener('input', (e) => { adminState.areaQ = e.target.value; adminState.areaPage = 1; renderAdminAreas(); });
-  $('#adminCitiesBody').addEventListener('change', (e) => {
-    const t = e.target.closest('[data-city-toggle]');
-    if (!t) return;
-    toggleCity(Number(t.dataset.cityToggle), t.checked);
-  });
-  $('#setSave').addEventListener('click', () => {
-    state.settings.tariff = clamp($('#setTariff').value, 0, 20);
-    state.settings.kwh = clamp($('#setKwh').value, 0, 5);
-    state.settings.source = clamp($('#setSource').value, 0.5, 10000);
-    state.settings.water = clamp($('#setWater').value, 0, 50);
-    save();
-    log('settings', 'Parâmetros de cálculo atualizados');
-    toast('Configurações salvas.');
-    if (activeRoute === 'overview' || activeRoute === 'areas' || activeRoute === 'reports') renderRoute(activeRoute);
-  });
-  $('#adminSeed').addEventListener('click', () => confirmAction('Recarregar dados de exemplo', 'Isso substitui as áreas e o histórico atuais pelos dados de demonstração.', () => {
-    seedDemo();
-    wizard = null;
-    renderShell();
-    renderAdmin();
-    toast('Dados de exemplo recarregados.');
-  }));
-  $('#adminClear').addEventListener('click', () => confirmAction('Limpar dados locais', 'Todas as áreas e todo o histórico deste navegador serão removidos.', () => {
-    state.areas = [];
-    state.history = [];
-    state.admin.demo = false;
-    state.nextId = 1;
-    save();
-    log('clear', 'Dados operacionais limpos');
-    wizard = null;
-    renderShell();
-    renderAdmin();
-    toast('Dados locais removidos.');
-  }));
-  $('#auditClear').addEventListener('click', () => confirmAction('Limpar trilha de auditoria', 'O histórico de eventos administrativos será apagado.', () => {
-    state.admin.log = [];
-    save();
-    renderAdminAudit();
-    toast('Trilha limpa.');
-  }));
-
-  // modal backdrop / esc
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-      ['cityModal', 'areaModal', 'confirmModal'].forEach((id) => { if (document.getElementById(id)?.classList.contains('open')) closeModal(id); });
+      return;
+    }
+    const sysBtn = e.target.closest('[data-system]');
+    if (sysBtn && wizard) {
+      wizard.draft.system = sysBtn.dataset.system;
+      renderWizard();
+      return;
+    }
+    const actBtn = e.target.closest('[data-action]');
+    if (!actBtn) return;
+    const action = actBtn.dataset.action;
+    const id = Number(actBtn.dataset.id);
+    if (action === 'selectCity' && id) {
+      state.activeCity = id;
+      save();
+      renderShell();
+      ensureWeather(id);
+      renderRoute(activeRoute);
+      toast('Município alterado para ' + cityOf(id).nome);
+    } else if (action === 'deleteArea' && id) {
+      state.areas = state.areas.filter((a) => Number(a.id) !== id);
+      save();
+      renderShell();
+      renderAreas();
+      toast('Área removida.');
+    } else if (action === 'irrigateArea' && id) {
+      const area = state.areas.find((a) => Number(a.id) === id);
+      if (area) {
+        const p = areaDemand(area);
+        state.history.unshift({
+          id: Date.now() + Math.random(),
+          date: todayISO(),
+          city: area.city,
+          areaName: area.name,
+          crop: p.crop.nome,
+          volume: Number(p.volume.toFixed(1)),
+          cost: Number(p.cost.toFixed(2)),
+        });
+        state.history = state.history.slice(0, 200);
+        save();
+        toast('Irrigação de ' + fmt(p.volume, 1) + ' m³ registrada para ' + area.name);
+      }
+    } else if (action === 'demoKeep') {
+      state.admin.demo = false;
+      save();
+      renderDemoNotice();
+    } else if (action === 'demoClear') {
+      state.areas = [];
+      state.admin.demo = false;
+      save();
+      renderShell();
+      renderOverview();
+      toast('Dados de exemplo removidos.');
     }
   });
-  $$('.modal-backdrop').forEach((b) => b.addEventListener('click', () => closeModal(b.dataset.close)));
 
-  // hash router
-  window.addEventListener('hashchange', () => {
-    const r = location.hash.replace('#', '') || 'overview';
-    if (ROUTES[r] && r !== activeRoute) navigate(r, true);
-  });
-}
-
-function validateStep(step) {
-  if (step === 1) {
-    if (!(Number($('#wArea').value) > 0)) { toast('Informe uma área maior que zero.', 'error'); return false; }
-    if (!(Number($('#wFlow').value) > 0)) { toast('Informe a vazão da bomba.', 'error'); return false; }
-  }
-  if (step === 2 && !wizard.draft.crop) { toast('Escolha uma cultura.', 'error'); return false; }
-  if (step === 3) {
-    if (!(Number($('#wEto').value) > 0)) { toast('Informe a ETo do dia.', 'error'); return false; }
-    if (!(Number($('#wTariff').value) >= 0)) { toast('Confira a tarifa de energia.', 'error'); return false; }
-  }
-  return true;
-}
-
-function handleAction(action, el) {
-  const id = Number(el.dataset.id);
-  if (action === 'newArea') { openAreaModal(); return; }
-  if (action === 'useCity') {
-    selectCity(id);
-    if (activeRoute === 'admin') navigate('overview');
-  }
-  if (action === 'demoKeep') {
-    state.admin.demo = false;
-    save();
-    renderDemoNotice();
-    toast('Dados de exemplo mantidos.');
-  }
-  if (action === 'demoClear') {
-    confirmAction('Limpar dados de exemplo', 'As áreas e o histórico de exemplo serão removidos. Você pode cadastrar suas próprias áreas depois.', () => {
-      state.areas = [];
-      state.history = [];
-      state.admin.demo = false;
-      state.nextId = 1;
-      wizard = null;
-      save();
-      log('clear', 'Dados de exemplo removidos');
+  $('#menuBtn')?.addEventListener('click', openSidebar);
+  $('#sidebarBackdrop')?.addEventListener('click', closeSidebar);
+  $('#refreshSensors')?.addEventListener('click', () => {
+    ensureWeather(state.activeCity, true).then(() => {
       renderShell();
       renderRoute(activeRoute);
-      toast('Dados de exemplo removidos.');
+      toast('Dados climáticos atualizados.');
     });
-  }
-  if (action === 'delArea' || action === 'adminDelArea') {
-    const area = state.areas.find((a) => Number(a.id) === id);
-    if (!area) return;
-    confirmAction('Remover área', 'A área "' + area.name + '" e seus registros de irrigação serão removidos.', () => {
-      state.areas = state.areas.filter((a) => Number(a.id) !== id);
-      state.history = state.history.filter((h) => Number(h.areaId) !== id);
-      save();
-      log('area_del', 'Área "' + area.name + '" removida');
-      renderShell();
-      if (activeRoute === 'admin') renderAdmin(); else renderRoute(activeRoute);
-      toast('Área removida.');
+  });
+
+  $('#wizBack')?.addEventListener('click', () => {
+    if (wizard && wizard.step > 1) { wizard.step--; renderWizard(); }
+  });
+  $('#wizNext')?.addEventListener('click', () => {
+    if (wizard && wizard.step < 4) { wizard.step++; renderWizard(); }
+  });
+  $('#wCropSearch')?.addEventListener('input', (e) => {
+    if (!wizard) return;
+    wizard.cropSearch = e.target.value;
+    renderCropGrid();
+  });
+
+  const bindField = (sel, key, parser = (v) => v, touchKey = null) => {
+    $(sel)?.addEventListener('input', (e) => {
+      if (!wizard) return;
+      wizard.draft[key] = parser(e.target.value);
+      if (touchKey) wizard.draft[touchKey] = true;
+      renderWizardSummary();
     });
-  }
-  if (action === 'irrigate') {
-    const area = state.areas.find((a) => Number(a.id) === id);
-    if (!area) return;
-    const p = areaDemand(area);
-    recordIrrigation(area, todayISO(), p.volume, p.cost);
-    renderRoute(activeRoute);
-    toast('Irrigação registrada: ' + fmt(p.volume, 1) + ' m³.');
-  }
-  if (action === 'irrigateDay') {
-    const area = state.areas.find((a) => Number(a.id) === id);
-    if (!area) return;
-    const date = el.dataset.date || todayISO();
-    const day = forecastFor(area.city).find((d) => d.date === date) || forecastFor(area.city)[0];
-    const p = areaForDay(area, day);
-    recordIrrigation(area, date, p.volume, p.cost);
-    renderRoute(activeRoute);
-    toast('Irrigação registrada: ' + fmt(p.volume, 1) + ' m³.');
-  }
+  };
+  bindField('#wName', 'name', (v) => v);
+  bindField('#wArea', 'area', (v) => clamp(v, 0.01, 50000));
+  bindField('#wFlow', 'flow', (v) => clamp(v, 0.1, 50000));
+  bindField('#wSource', 'source', (v) => clamp(v, 1, 100000));
+  bindField('#wPlanting', 'planting', (v) => v);
+  bindField('#wPhase', 'phase', (v) => v);
+  bindField('#wSoil', 'soil', (v) => v);
+  bindField('#wEto', 'eto', (v) => clamp(v, 0.2, 20), 'etoTouched');
+  bindField('#wRain', 'rain', (v) => clamp(v, 0, 500), 'rainTouched');
+  bindField('#wTariff', 'tariff', (v) => clamp(v, 0, 50));
+
+  $('#citySearch')?.addEventListener('input', renderClimate);
+
+  window.addEventListener('hashchange', () => {
+    const r = location.hash.replace(/^#/, '');
+    if (r && ROUTES[r] && r !== activeRoute) navigate(r, true);
+  });
 }
 
-function selectCity(id) {
-  const city = cityOf(id);
-  if (!city) return;
-  const off = state.admin.inactive.map(Number);
-  if (off.includes(Number(id)) && !isAdmin()) { toast('Município indisponível.', 'error'); return; }
-  state.activeCity = Number(id);
-  save();
-  closeModal('cityModal');
-  if (wizard) {
-    wizard.draft.city = Number(id);
-    const w = todayWeather(id);
-    if (!wizard.draft.etoTouched) wizard.draft.eto = Number(w.eto.toFixed(2));
-    if (!wizard.draft.rainTouched) wizard.draft.rain = Number(w.rain.toFixed(1));
+(function init() {
+  if (!state.seeded && !state.areas.length) {
+    seedDemo();
   }
-  agendaOffset = 0;
-  renderShell();
-  renderRoute(activeRoute);
-  ensureWeather(id).then(() => { renderShell(); renderRoute(activeRoute); });
-  toast(city.nome + ' selecionado.');
-}
-
-function toggleCity(id, active) {
-  if (active) state.admin.inactive = state.admin.inactive.filter((x) => Number(x) !== Number(id));
-  else if (!state.admin.inactive.map(Number).includes(Number(id))) state.admin.inactive.push(Number(id));
-  if (!active && activeCities().length === 0) {
-    state.admin.inactive = state.admin.inactive.filter((x) => Number(x) !== Number(id));
-    toast('Mantenha ao menos um município ativo.', 'error');
-    renderAdminCities();
-    return;
-  }
-  if (!active && Number(state.activeCity) === Number(id)) {
-    const fallback = activeCities().find((c) => c.id === DEFAULT_CITY) || activeCities()[0];
-    state.activeCity = fallback ? fallback.id : DEFAULT_CITY;
-  }
-  save();
-  log('city', `Município ${cityOf(id).nome} ${active ? 'ativado' : 'desativado'}`);
-  renderShell();
-  renderAdminCities();
-  toast(cityOf(id).nome + (active ? ' ativado.' : ' desativado.'));
-}
-
-function closeSidebar() {
-  $('#sidebar').classList.remove('open');
-  $('#sidebarBackdrop').classList.remove('show');
-}
-
-/* ============================================================
-   Init
-   ============================================================ */
-function init() {
-  if (!CITIES.length) {
-    document.body.innerHTML = '<div style="padding:40px;font-family:sans-serif">Base de municípios não carregada. Verifique <code>dados/municipios_pi.js</code>.</div>';
-    return;
-  }
-  if (!state.seeded) seedDemo();
   bindEvents();
   renderShell();
-  const route = (location.hash || '#overview').replace('#', '');
-  navigate(ROUTES[route] ? route : 'overview', true);
+  const initialRoute = ROUTES[location.hash.replace(/^#/, '')] ? location.hash.replace(/^#/, '') : 'overview';
+  navigate(initialRoute, true);
   ensureWeather(state.activeCity).then(() => {
     renderShell();
-    if (['overview', 'calculator', 'areas', 'agenda', 'reports'].includes(activeRoute)) renderRoute(activeRoute);
+    renderRoute(activeRoute);
   });
-  const otherCities = [...new Set(state.areas.map((a) => Number(a.city)))].filter((id) => id !== Number(state.activeCity)).slice(0, 4);
-  otherCities.forEach((id) => ensureWeather(id).then(() => {
-    if (['overview', 'areas', 'agenda', 'reports'].includes(activeRoute)) renderRoute(activeRoute);
-  }));
-}
-
-document.addEventListener('DOMContentLoaded', init);
+})();
