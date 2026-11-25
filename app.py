@@ -1,4 +1,4 @@
-"""Servidor local do AgroÁgua e ponto de entrada da API AgroIA."""
+"""Servidor local do AgroÁgua e ponto de entrada da API LiaIA."""
 
 from pathlib import Path
 import os
@@ -7,6 +7,10 @@ import requests
 from dotenv import load_dotenv
 from flask import Flask, abort, jsonify, request, send_from_directory
 from werkzeug.exceptions import HTTPException
+try:
+    from .database import init_app
+except ImportError:
+    from database import init_app
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -17,14 +21,16 @@ PAGES = {
     "automacao-esp32.html",
 }
 PUBLIC_EXTENSIONS = {
-    "assets": {".css", ".js", ".svg", ".png", ".jpg", ".webp", ".woff", ".woff2"},
-    "dados": {".js", ".json", ".csv"},
+    "css": {".css"},
+    "js": {".js"},
+    "dados": {".json", ".csv"},
     "img": {".png", ".jpg", ".jpeg", ".svg", ".webp", ".gif"},
 }
 
 app = Flask(__name__, static_folder=None)
 app.config["MAX_CONTENT_LENGTH"] = 128 * 1024
 app.json.ensure_ascii = False
+init_app(app)
 
 
 @app.get("/")
@@ -39,7 +45,8 @@ def health():
         status="ok",
         service="AgroÁgua",
         agroia="configured" if groq_key else "not_configured",
-        provider="groq"
+        provider="groq",
+        database_configured=bool(os.getenv("DATABASE_URL", "").strip())
     )
 
 
@@ -52,7 +59,7 @@ def chat():
 
     message = payload.get("message")
     if not isinstance(message, str) or not message.strip():
-        return jsonify(error="Escreva uma mensagem para a AgroIA."), 400
+        return jsonify(error="Escreva uma mensagem para a LiaIA."), 400
     if len(message) > 2000:
         return jsonify(error="A mensagem deve ter até 2000 caracteres."), 400
 
@@ -74,7 +81,13 @@ def chat():
                        code="agroia_not_configured"), 503
 
     model = os.getenv("GROQ_MODEL", "qwen/qwen3.8-27b").strip()
-    messages = [{"role": "system", "content": AGROIA_CONTEXT}]
+    storage_context = (
+        "Estado atual da aplicação: a conexão PostgreSQL está configurada. "
+        "Isso não informa se uma operação específica foi concluída."
+        if os.getenv("DATABASE_URL", "").strip()
+        else "Estado atual da aplicação: os cadastros usam o modo local do navegador."
+    )
+    messages = [{"role": "system", "content": AGROIA_CONTEXT + "\n\n" + storage_context}]
     for turn in history:
         role = "user" if turn["role"] == "user" else "assistant"
         messages.append({"role": role, "content": turn["text"]})
@@ -96,15 +109,15 @@ def chat():
         result = response.json()
         choices = result.get("choices", [])
         if not choices:
-            return jsonify(error="A AgroIA não retornou uma resposta. Tente reformular a pergunta."), 502
+            return jsonify(error="A LiaIA não retornou uma resposta. Tente reformular a pergunta."), 502
         reply = choices[0].get("message", {}).get("content", "").strip()
         if not reply:
             return jsonify(error="A resposta veio vazia. Tente novamente."), 502
         return jsonify(reply=reply)
     except requests.Timeout:
-        return jsonify(error="A AgroIA demorou para responder. Tente novamente."), 504
+        return jsonify(error="A LiaIA demorou para responder. Tente novamente."), 504
     except (requests.RequestException, ValueError, AttributeError, TypeError, KeyError, IndexError):
-        return jsonify(error="Não foi possível consultar a AgroIA. Verifique a conexão com a internet."), 502
+        return jsonify(error="Não foi possível consultar a LiaIA. Verifique a conexão com a internet."), 502
 
 
 @app.get("/<filename>")
@@ -114,7 +127,8 @@ def page(filename):
     return send_from_directory(PROJECT_ROOT, filename)
 
 
-@app.get("/assets/<path:filename>", defaults={"folder": "assets"})
+@app.get("/css/<path:filename>", defaults={"folder": "css"})
+@app.get("/js/<path:filename>", defaults={"folder": "js"})
 @app.get("/dados/<path:filename>", defaults={"folder": "dados"})
 @app.get("/img/<path:filename>", defaults={"folder": "img"})
 def public_file(folder, filename):
@@ -130,7 +144,7 @@ def public_file(folder, filename):
 def http_error(error):
     if request.path.startswith("/api/"):
         response = error.get_response()
-        response.data = app.json.dumps({"error": error.name})
+        response.data = app.json.dumps({"error": error.description})
         response.content_type = "application/json"
         return response
     return error
