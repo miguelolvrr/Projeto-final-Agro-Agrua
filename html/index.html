@@ -4,17 +4,364 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>AgroÁgua Piauí — Irrigação Inteligente</title>
-  <link rel="stylesheet" href="/assets/css/style.css" />
   <style>
-    .auth-locked {
-      display: none !important;
+    :root {
+      --bg: #f4f7f5;
+      --surface: #ffffff;
+      --ink: #0f172a;
+      --muted: #52606d;
+      --line: #dbe4de;
+      --brand: #15803d;
+      --brand-dark: #14532d;
+      --brand-soft: #dcfce7;
+      --amber: #b45309;
+      --amber-soft: #fef3c7;
+      --red: #b91c1c;
+      --red-soft: #fee2e2;
+      --blue: #1d4ed8;
+      --blue-soft: #dbeafe;
+      --radius: 14px;
     }
-    .view {
-      display: none;
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      line-height: 1.45;
     }
-    .view.active {
-      display: block;
+    a { color: inherit; text-decoration: none; }
+    button, input, select { font: inherit; color: inherit; }
+    input, select {
+      width: 100%;
+      padding: 9px 11px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #fff;
     }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 9px 14px;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: #fff;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn:hover { background: #f8fafc; }
+    .btn-primary {
+      background: var(--brand);
+      border-color: var(--brand);
+      color: #fff;
+    }
+    .btn-primary:hover { background: var(--brand-dark); }
+    .btn-secondary { background: #f8fafc; }
+    .btn-danger {
+      background: var(--red-soft);
+      border-color: #fecaca;
+      color: var(--red);
+    }
+    .btn-sm { padding: 6px 10px; font-size: 13px; border-radius: 8px; }
+    .btn-link {
+      background: none;
+      border: 0;
+      color: var(--brand);
+      font-weight: 600;
+      cursor: pointer;
+      padding: 0;
+    }
+    .w-full { width: 100%; }
+    .small { font-size: 13.5px; }
+    .tiny { font-size: 12px; }
+    .muted { color: var(--muted); }
+    .flex { display: flex; }
+    .flex-wrap { flex-wrap: wrap; }
+    .items-center { align-items: center; }
+    .justify-between { justify-content: space-between; }
+    .justify-end { justify-content: flex-end; }
+    .gap-2 { gap: 8px; }
+    .gap-3 { gap: 12px; }
+    .space-y-2 > * + * { margin-top: 8px; }
+    .space-y-3 > * + * { margin-top: 12px; }
+    .space-y-4 > * + * { margin-top: 16px; }
+    .mt-2 { margin-top: 8px; }
+    .mt-3 { margin-top: 12px; }
+    .mt-4 { margin-top: 16px; }
+    .mb-1 { margin-bottom: 4px; }
+    .mb-2 { margin-bottom: 8px; }
+    .mb-3 { margin-bottom: 12px; }
+    .pt-2 { padding-top: 8px; }
+    .py-2 { padding-top: 8px; padding-bottom: 8px; }
+    .border-b { border-bottom: 1px solid var(--line); }
+    .grid { display: grid; gap: 14px; }
+    .g2 { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+    .g3 { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
+    .g5 { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
+    .t-right { text-align: right; }
+    .num { font-variant-numeric: tabular-nums; }
+
+    /* Login */
+    .auth-screen {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: linear-gradient(135deg, #14532d 0%, #166534 45%, #e6f4ea 45%, #f4f7f5 100%);
+    }
+    .auth-wrap {
+      width: 100%;
+      max-width: 920px;
+      display: grid;
+      grid-template-columns: 1fr 1.15fr;
+      background: var(--surface);
+      border-radius: 20px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      box-shadow: 0 20px 50px rgba(15, 23, 42, 0.12);
+    }
+    .auth-brand-panel {
+      background: linear-gradient(160deg, #14532d, #15803d);
+      color: #fff;
+      padding: 32px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 24px;
+    }
+    .auth-brand-panel h1 { font-size: 30px; line-height: 1.15; margin-top: 12px; }
+    .auth-brand-panel p { margin-top: 12px; opacity: 0.9; font-size: 14.5px; }
+    .auth-badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.16);
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .auth-footer-note { font-size: 12.5px; opacity: 0.85; }
+    .auth-form-panel { padding: 28px 32px; }
+    .auth-form-panel h2 { font-size: 22px; }
+    .auth-accounts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .auth-account {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #fff;
+      cursor: pointer;
+      text-align: left;
+    }
+    .auth-account.selected {
+      border-color: var(--brand);
+      background: var(--brand-soft);
+    }
+    .auth-account-info small { display: block; color: var(--muted); font-size: 12px; }
+    .auth-radio {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      border: 2px solid #94a3b8;
+    }
+    .auth-account.selected .auth-radio {
+      border-color: var(--brand);
+      background: var(--brand);
+    }
+
+    /* App Shell */
+    .auth-locked { display: none !important; }
+    .app { display: flex; min-height: 100vh; }
+    .sidebar {
+      width: 248px;
+      background: var(--surface);
+      border-right: 1px solid var(--line);
+      padding: 18px 14px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 16px;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+    }
+    .side-top strong { font-size: 18px; color: var(--brand-dark); display: block; }
+    .side-nav { display: flex; flex-direction: column; gap: 4px; margin-top: 12px; }
+    .nav-btn {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 9px 12px;
+      border-radius: 10px;
+      border: 0;
+      background: transparent;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      text-align: left;
+    }
+    .nav-btn:hover { background: #f1f5f9; }
+    .nav-btn.active {
+      background: var(--brand-soft);
+      color: var(--brand-dark);
+      font-weight: 700;
+    }
+    .plan-card {
+      padding: 12px;
+      border-radius: 12px;
+      background: #f8fafc;
+      border: 1px solid var(--line);
+    }
+    .plan-top { display: flex; justify-content: space-between; font-size: 13.5px; }
+    .plan-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+    .avatar {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: var(--brand);
+      color: #fff;
+      display: grid;
+      place-items: center;
+      font-weight: 700;
+    }
+    .main-shell { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+    .topbar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--line);
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      position: sticky;
+      top: 0;
+      z-index: 20;
+    }
+    .page-title { font-size: 18px; line-height: 1.2; }
+    .weather-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: var(--brand-soft);
+      color: var(--brand-dark);
+      font-size: 13px;
+    }
+    .weather-pill.offline { background: #f1f5f9; color: var(--muted); }
+    .content { padding: 20px; max-width: 1280px; width: 100%; margin: 0 auto; }
+    .view { display: none; }
+    .view.active { display: block; }
+
+    /* Cards, KPIs, Badges, Tables */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+    }
+    .card-head {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .card-head h2 { font-size: 15.5px; }
+    .card-body { padding: 16px 18px; }
+    .kpi { padding: 16px; display: flex; flex-direction: column; gap: 4px; }
+    .kpi.accent { border-color: #86efac; background: #f0fdf4; }
+    .kpi.good { border-color: #86efac; }
+    .kpi .label { font-size: 12.5px; color: var(--muted); }
+    .kpi .value { font-size: 22px; font-weight: 800; }
+    .kpi .foot { font-size: 12px; color: var(--muted); }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 9px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      background: #f1f5f9;
+      color: var(--muted);
+    }
+    .badge.green { background: var(--brand-soft); color: var(--brand-dark); }
+    .badge.amber { background: var(--amber-soft); color: var(--amber); }
+    .badge.red { background: var(--red-soft); color: var(--red); }
+    .badge.blue { background: var(--blue-soft); color: var(--blue); }
+
+    .alert {
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: #f8fafc;
+    }
+    .alert.danger { background: var(--red-soft); border-color: #fecaca; color: var(--red); }
+
+    .weather-strip {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+      gap: 8px;
+    }
+    .wday {
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      text-align: center;
+      background: #fff;
+    }
+    .wday.today { border-color: var(--brand); background: #f0fdf4; }
+    .wday .d { font-size: 12px; color: var(--muted); text-transform: capitalize; }
+    .wday .i { font-size: 18px; margin: 4px 0; }
+    .wday .r { font-size: 12.5px; font-weight: 700; color: var(--blue); }
+    .wday .t { font-size: 12px; color: var(--muted); }
+
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th, td { padding: 10px 12px; border-bottom: 1px solid var(--line); text-align: left; }
+    th { font-size: 12.5px; color: var(--muted); background: #f8fafc; }
+
+    .step-pane { display: none; }
+    .step-pane.active { display: block; }
+    .step {
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: #f1f5f9;
+      color: var(--muted);
+      font-size: 12.5px;
+      font-weight: 600;
+    }
+    .step.active { background: var(--brand); color: #fff; }
+    .step.done { background: var(--brand-soft); color: var(--brand-dark); }
+    .crop-card, .sys-card {
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #fff;
+      text-align: left;
+      cursor: pointer;
+    }
+    .crop-card.sel, .sys-card.sel {
+      border-color: var(--brand);
+      background: #f0fdf4;
+    }
+    .sum-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 7px 0;
+      border-bottom: 1px solid var(--line);
+      font-size: 13.5px;
+    }
+    #authError, #registerError { display: none; }
+    #authError.show, #registerError.show { display: block; }
+
     .toast {
       position: fixed;
       right: 18px;
@@ -22,7 +369,7 @@
       z-index: 9999;
       padding: 10px 14px;
       border-radius: 10px;
-      background: #14532d;
+      background: var(--brand-dark);
       color: #fff;
       font-size: 14px;
       opacity: 0;
@@ -30,30 +377,27 @@
       transform: translateY(8px);
       transition: opacity 0.2s ease, transform 0.2s ease;
     }
-    .toast.show {
-      opacity: 1;
-      transform: translateY(0);
-    }
-    .toast.error {
-      background: #991b1b;
-    }
-    .step-pane {
-      display: none;
-    }
-    .step-pane.active {
-      display: block;
-    }
-    #authError {
-      display: none;
-    }
-    #authError.show {
-      display: block;
-    }
-    #registerError {
-      display: none;
-    }
-    #registerError.show {
-      display: block;
+    .toast.show { opacity: 1; transform: translateY(0); }
+    .toast.error { background: var(--red); }
+
+    @media (max-width: 820px) {
+      .auth-wrap { grid-template-columns: 1fr; }
+      .auth-accounts { grid-template-columns: 1fr; }
+      .sidebar {
+        position: fixed;
+        left: -260px;
+        z-index: 50;
+        transition: left 0.2s ease;
+      }
+      .sidebar.open { left: 0; }
+      .sidebar-backdrop {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.35);
+        z-index: 40;
+      }
+      .sidebar-backdrop.open { display: block; }
     }
   </style>
 </head>
@@ -67,7 +411,7 @@
           <h1>Cada gota no momento certo.</h1>
           <p>Acompanhe suas áreas, estime a demanda hídrica e planeje a irrigação com mais segurança.</p>
         </div>
-        <div class="auth-footer-note">224 municípios do Piauí · Clima, solo e manejo</div>
+        <div class="auth-footer-note">Municípios do Piauí · Clima, solo e manejo</div>
       </div>
 
       <div class="auth-form-panel">
@@ -183,56 +527,56 @@
     <div id="sidebarBackdrop" class="sidebar-backdrop"></div>
 
     <aside id="sidebar" class="sidebar">
-      <div class="side-top">
-        <strong>AgroÁgua</strong>
-        <span id="sideCityName" class="small muted">Teresina</span>
-        <div id="sideCityMeta" class="tiny muted">PI · —</div>
+      <div>
+        <div class="side-top">
+          <strong>AgroÁgua</strong>
+          <span id="sideCityName" class="small muted">Teresina</span>
+          <div id="sideCityMeta" class="tiny muted">PI · —</div>
+        </div>
+
+        <nav class="side-nav">
+          <button type="button" class="nav-btn active" data-route="overview">
+            <span>Visão geral</span>
+          </button>
+          <button type="button" class="nav-btn" data-route="calculator">
+            <span>Calculadora</span>
+          </button>
+          <button type="button" class="nav-btn" data-route="areas">
+            <span>Minhas áreas</span>
+            <span id="navAreasCount" class="badge">0</span>
+          </button>
+          <button type="button" class="nav-btn" data-route="agenda">
+            <span>Agenda</span>
+          </button>
+          <button type="button" class="nav-btn" data-route="climate">
+            <span>Clima &amp; municípios</span>
+          </button>
+          <button type="button" class="nav-btn" data-route="reports">
+            <span>Relatórios</span>
+          </button>
+          <button type="button" class="nav-btn" data-route="data">
+            <span>Base de dados</span>
+          </button>
+          <div id="adminNavGroup" hidden>
+            <button type="button" class="nav-btn" data-route="admin">
+              <span>Administração</span>
+            </button>
+          </div>
+        </nav>
       </div>
 
-      <nav class="side-nav">
-        <button type="button" class="nav-btn active" data-route="overview">
-          <span>Visão geral</span>
-        </button>
-        <button type="button" class="nav-btn" data-route="calculator">
-          <span>Calculadora</span>
-        </button>
-        <button type="button" class="nav-btn" data-route="areas">
-          <span>Minhas áreas</span>
-          <span id="navAreasCount" class="badge">0</span>
-        </button>
-        <button type="button" class="nav-btn" data-route="agenda">
-          <span>Agenda</span>
-        </button>
-        <button type="button" class="nav-btn" data-route="climate">
-          <span>Clima &amp; municípios</span>
-        </button>
-        <button type="button" class="nav-btn" data-route="reports">
-          <span>Relatórios</span>
-        </button>
-        <button type="button" class="nav-btn" data-route="data">
-          <span>Base de dados</span>
-        </button>
-        <button type="button" class="nav-btn" data-route="automation">
-          <span>Automação ESP32</span>
-        </button>
-        <div id="adminNavGroup" hidden>
-          <button type="button" class="nav-btn" data-route="admin">
-            <span>Administração</span>
-          </button>
-        </div>
-      </nav>
-
-      <div id="planCard" class="plan-card"></div>
-
-      <div class="side-footer">
-        <div class="flex items-center gap-2">
-          <div id="userAvatar" class="avatar">A</div>
-          <div>
-            <div id="userName" class="small"><strong>Usuário</strong></div>
-            <div id="userRole" class="tiny muted">Acesso</div>
+      <div class="space-y-3">
+        <div id="planCard" class="plan-card"></div>
+        <div class="side-footer">
+          <div class="flex items-center gap-2">
+            <div id="userAvatar" class="avatar">A</div>
+            <div>
+              <div id="userName" class="small"><strong>Usuário</strong></div>
+              <div id="userRole" class="tiny muted">Acesso</div>
+            </div>
           </div>
+          <button type="button" id="logoutBtn" class="btn btn-secondary btn-sm mt-2 w-full">Sair</button>
         </div>
-        <button type="button" id="logoutBtn" class="btn btn-secondary btn-sm mt-2 w-full">Sair</button>
       </div>
     </aside>
 
@@ -260,7 +604,6 @@
       </header>
 
       <main class="content">
-        <!-- Visão geral -->
         <section id="view-overview" class="view active space-y-4">
           <div class="flex items-center justify-between flex-wrap gap-2">
             <p id="ovSub" class="small muted"></p>
@@ -271,9 +614,7 @@
 
           <div class="grid g2">
             <div class="card">
-              <div class="card-head">
-                <h2>Recomendação de irrigação</h2>
-              </div>
+              <div class="card-head"><h2>Recomendação de irrigação</h2></div>
               <div class="card-body space-y-3">
                 <div id="recHero"></div>
                 <div id="recList"></div>
@@ -292,9 +633,7 @@
           </div>
 
           <div class="card">
-            <div class="card-head">
-              <h2>Previsão de 7 dias</h2>
-            </div>
+            <div class="card-head"><h2>Previsão de 7 dias</h2></div>
             <div class="card-body">
               <div id="weatherStrip" class="weather-strip"></div>
               <p id="weatherFoot" class="small muted mt-2"></p>
@@ -327,7 +666,6 @@
           </div>
         </section>
 
-        <!-- Calculadora -->
         <section id="view-calculator" class="view space-y-4">
           <div class="card">
             <div class="card-head">
@@ -335,7 +673,7 @@
               <span id="wizBadge" class="badge">Passo 1 de 4</span>
             </div>
             <div class="card-body space-y-4">
-              <div id="wizSteps" class="steps-bar flex gap-2 flex-wrap">
+              <div id="wizSteps" class="flex gap-2 flex-wrap">
                 <span class="step active" data-step="1">1. Área e solo</span>
                 <span class="step" data-step="2">2. Cultura</span>
                 <span class="step" data-step="3">3. Sistema e clima</span>
@@ -433,14 +771,11 @@
           </div>
 
           <div class="card">
-            <div class="card-head">
-              <h2>Resumo da simulação</h2>
-            </div>
+            <div class="card-head"><h2>Resumo da simulação</h2></div>
             <div id="wSummary" class="card-body"></div>
           </div>
         </section>
 
-        <!-- Minhas áreas -->
         <section id="view-areas" class="view space-y-4">
           <div class="flex items-center justify-between">
             <h2>Minhas áreas</h2>
@@ -449,22 +784,18 @@
           <div id="areasList"></div>
         </section>
 
-        <!-- Agenda -->
         <section id="view-agenda" class="view space-y-4">
           <div class="card">
-            <div class="card-head">
-              <h2>Agenda de 7 dias</h2>
-            </div>
+            <div class="card-head"><h2>Agenda de 7 dias</h2></div>
             <div id="agendaBody" class="card-body"></div>
           </div>
         </section>
 
-        <!-- Clima & municípios -->
         <section id="view-climate" class="view space-y-4">
           <div class="card">
             <div class="card-head">
               <h2>Clima &amp; municípios do Piauí</h2>
-              <input id="citySearch" type="search" placeholder="Buscar município..." />
+              <input id="citySearch" type="search" placeholder="Buscar município..." style="max-width:260px;" />
             </div>
             <div class="card-body">
               <div class="table-wrap">
@@ -485,44 +816,23 @@
           </div>
         </section>
 
-        <!-- Relatórios -->
         <section id="view-reports" class="view space-y-4">
           <div class="card">
-            <div class="card-head">
-              <h2>Histórico de irrigações</h2>
-            </div>
+            <div class="card-head"><h2>Histórico de irrigações</h2></div>
             <div id="reportHistory" class="card-body"></div>
           </div>
         </section>
 
-        <!-- Base de dados -->
         <section id="view-data" class="view space-y-4">
           <div class="card">
-            <div class="card-head">
-              <h2>Base de dados</h2>
-            </div>
+            <div class="card-head"><h2>Base de dados</h2></div>
             <div id="dataSummary" class="card-body"></div>
           </div>
         </section>
 
-        <!-- Automação ESP32 -->
-        <section id="view-automation" class="view space-y-4">
-          <div class="card">
-            <div class="card-head">
-              <h2>Automação ESP32</h2>
-            </div>
-            <div class="card-body">
-              <iframe id="automationFrame" title="Automação ESP32" style="width:100%;min-height:720px;border:0;border-radius:12px;"></iframe>
-            </div>
-          </div>
-        </section>
-
-        <!-- Administração -->
         <section id="view-admin" class="view space-y-4">
           <div class="card">
-            <div class="card-head">
-              <h2>Administração</h2>
-            </div>
+            <div class="card-head"><h2>Administração</h2></div>
             <div id="adminLog" class="card-body"></div>
           </div>
         </section>
@@ -532,10 +842,186 @@
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-  <script src="/assets/js/municipios_pi.js"></script>
-  <script src="/assets/js/base_dados.js"></script>
-  <script src="/assets/js/i18n.js"></script>
-  <script src="/assets/js/agroia.js"></script>
-  <script src="/assets/js/saas.js"></script>
-</body>
-</html>
+  <script>
+    'use strict';
+
+    const CITIES = [
+      { id: 2211001, nome: 'Teresina', pop: 866300, chuvaAnual: 1320, etoAnual: 1840, lat: -5.09, lon: -42.80, chuva: [170,195,235,190,80,20,10,8,15,45,95,297], eto: [5.1,4.8,4.6,4.5,4.7,5.0,5.3,5.8,6.1,6.0,5.6,5.2], t2m: [27.5,27.0,27.0,27.2,27.5,27.6,28.0,28.8,29.5,29.8,29.2,28.2] },
+      { id: 2207702, nome: 'Parnaíba', pop: 162159, chuvaAnual: 1280, etoAnual: 1790, lat: -2.90, lon: -41.77, chuva: [145,190,260,255,155,55,25,10,8,12,35,125], eto: [4.8,4.6,4.5,4.4,4.6,4.9,5.2,5.6,5.9,5.8,5.5,5.0], t2m: [27.4,27.2,27.1,27.0,27.1,27.2,27.4,27.8,28.2,28.4,28.2,27.8] },
+      { id: 2207900, nome: 'Picos', pop: 78222, chuvaAnual: 760, etoAnual: 1920, lat: -7.07, lon: -41.46, chuva: [95,120,155,115,40,12,6,4,10,35,68,100], eto: [5.4,5.1,4.9,4.8,4.9,5.1,5.4,5.9,6.3,6.2,5.8,5.5], t2m: [28.0,27.5,27.2,27.0,27.0,27.2,27.6,28.6,29.8,30.2,29.4,28.4] },
+      { id: 2203909, nome: 'Floriano', pop: 60184, chuvaAnual: 1120, etoAnual: 1860, lat: -6.76, lon: -43.02, chuva: [155,175,205,155,55,15,8,5,14,48,88,210], eto: [5.1,4.8,4.7,4.6,4.8,5.1,5.4,5.9,6.2,6.0,5.6,5.2], t2m: [27.6,27.2,27.0,27.2,27.5,27.8,28.2,29.0,29.8,30.0,29.2,28.1] },
+      { id: 2201903, nome: 'Campo Maior', pop: 47775, chuvaAnual: 1350, etoAnual: 1810, lat: -4.82, lon: -42.17, chuva: [175,205,245,200,85,22,10,8,15,45,95,285], eto: [5.0,4.7,4.6,4.5,4.7,5.0,5.3,5.7,6.0,5.9,5.5,5.1], t2m: [27.4,27.0,26.9,27.0,27.3,27.5,27.8,28.5,29.2,29.5,28.9,28.0] },
+      { id: 2202208, nome: 'Bom Jesus', pop: 44768, chuvaAnual: 1080, etoAnual: 1850, lat: -9.07, lon: -44.35, chuva: [165,160,185,120,35,8,4,6,22,68,118,195], eto: [5.0,4.8,4.7,4.7,4.9,5.1,5.3,5.8,6.1,5.9,5.4,5.1], t2m: [26.8,26.5,26.4,26.5,26.6,26.8,27.2,28.2,29.2,29.4,28.4,27.3] },
+      { id: 2207009, nome: 'Oeiras', pop: 37201, chuvaAnual: 820, etoAnual: 1890, lat: -7.02, lon: -42.13, chuva: [105,130,165,120,42,12,6,4,10,36,72,122], eto: [5.3,5.0,4.8,4.7,4.9,5.1,5.4,5.9,6.2,6.1,5.7,5.4], t2m: [27.8,27.4,27.1,27.0,27.1,27.3,27.7,28.7,29.7,30.0,29.2,28.2] },
+      { id: 2208007, nome: 'Piripiri', pop: 63960, chuvaAnual: 1340, etoAnual: 1800, lat: -4.27, lon: -41.77, chuva: [170,205,245,205,90,25,12,8,14,40,85,270], eto: [4.9,4.7,4.5,4.4,4.6,4.9,5.2,5.6,5.9,5.8,5.5,5.0], t2m: [27.3,27.0,26.9,27.0,27.2,27.4,27.7,28.4,29.0,29.3,28.8,27.9] },
+      { id: 2202505, nome: 'Corrente', pop: 26537, chuvaAnual: 1150, etoAnual: 1820, lat: -10.43, lon: -45.16, chuva: [175,165,180,115,28,6,3,5,24,78,135,215], eto: [4.9,4.7,4.6,4.6,4.8,5.0,5.2,5.7,6.0,5.8,5.3,5.0], t2m: [26.5,26.3,26.2,26.3,26.4,26.5,26.9,27.9,28.9,29.0,28.0,27.0] },
+      { id: 2209302, nome: 'São Raimundo Nonato', pop: 35609, chuvaAnual: 690, etoAnual: 1960, lat: -9.01, lon: -42.69, chuva: [95,105,135,90,25,8,4,3,8,30,68,114], eto: [5.5,5.2,5.0,4.9,5.0,5.2,5.5,6.0,6.4,6.3,5.9,5.6], t2m: [27.9,27.5,27.2,27.1,27.1,27.2,27.6,28.6,29.8,30.2,29.4,28.4] },
+    ];
+    const CITY_BY_ID = new Map(CITIES.map((c) => [c.id, c]));
+    const CITIES_ALPHA = CITIES.slice().sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+
+    const CROPS = [
+      { id: 'alface', nome: 'Alface', ciclo: 50, kc: [0.70, 1.00, 0.95], raiz: 0.25, grupo: 'hortalica' },
+      { id: 'coentro', nome: 'Cebolinha / coentro', ciclo: 45, kc: [0.70, 1.00, 0.95], raiz: 0.20, grupo: 'hortalica' },
+      { id: 'tomate', nome: 'Tomate', ciclo: 130, kc: [0.60, 1.15, 0.80], raiz: 0.70, grupo: 'hortalica' },
+      { id: 'pimentao', nome: 'Pimentão', ciclo: 130, kc: [0.60, 1.05, 0.90], raiz: 0.50, grupo: 'hortalica' },
+      { id: 'melancia', nome: 'Melancia', ciclo: 85, kc: [0.40, 1.00, 0.75], raiz: 0.60, grupo: 'hortalica' },
+      { id: 'feijao', nome: 'Feijão', ciclo: 80, kc: [0.40, 1.15, 0.35], raiz: 0.50, grupo: 'graos' },
+      { id: 'milho', nome: 'Milho', ciclo: 115, kc: [0.30, 1.20, 0.50], raiz: 0.60, grupo: 'graos' },
+      { id: 'banana', nome: 'Banana', ciclo: 365, kc: [0.50, 1.20, 1.10], raiz: 0.50, grupo: 'frutifera' },
+      { id: 'manga', nome: 'Manga', ciclo: 365, kc: [0.50, 0.90, 0.75], raiz: 1.00, grupo: 'frutifera' },
+      { id: 'coco', nome: 'Coco', ciclo: 365, kc: [0.50, 1.00, 0.90], raiz: 0.80, grupo: 'frutifera' },
+    ];
+    const CROP_BY_ID = new Map(CROPS.map((c) => [c.id, c]));
+
+    const SYSTEMS = {
+      gotejamento: { id: 'gotejamento', nome: 'Gotejamento', eff: 0.90, kwh: 0.18, labor: 0.3, desc: 'Maior economia de água' },
+      micro: { id: 'micro', nome: 'Microaspersão', eff: 0.85, kwh: 0.22, labor: 0.5, desc: 'Boa uniformidade' },
+      aspersao: { id: 'aspersao', nome: 'Aspersão', eff: 0.70, kwh: 0.28, labor: 0.8, desc: 'Uso comum em grãos' },
+      sulco: { id: 'sulco', nome: 'Sulco / inundação', eff: 0.55, kwh: 0.05, labor: 3.0, desc: 'Menor eficiência' },
+    };
+    const SOILS = {
+      arenoso: { id: 'arenoso', nome: 'Arenoso', fc: 14, pwp: 6 },
+      medio: { id: 'medio', nome: 'Médio', fc: 26, pwp: 13 },
+      argiloso: { id: 'argiloso', nome: 'Argiloso', fc: 36, pwp: 18 },
+    };
+
+    const DEFAULT_CITY = 2211001;
+    const DEFAULT_SETTINGS = { tariff: 1.05, water: 0, labor: 18 };
+    const STORAGE_KEY = 'agroagua_single_v1';
+    const AUTH_KEY = 'agroagua_single_auth_v1';
+    const ACCOUNTS = {
+      admin: { username: 'admin', password: '2026', role: 'admin', name: 'Administrador', farm: 'Gestão AgroÁgua' },
+      agricultor: { username: 'agricultor', password: '2026', role: 'farmer', name: 'Produtor', farm: 'Fazenda Boa Vista' },
+    };
+
+    const $ = (s, r = document) => r.querySelector(s);
+    const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+    const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const fmt = (n, d = 1) => Number(n || 0).toLocaleString('pt-BR', { minimumFractionDigits: d, maximumFractionDigits: d });
+    const fmt0 = (n) => Number(n || 0).toLocaleString('pt-BR', { maximumFractionDigits: 0 });
+    const clamp = (n, min, max) => Math.min(max, Math.max(min, Number(n) || 0));
+    const norm = (s) => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+    const todayISO = () => new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+    const isoOffset = (days) => {
+      const d = new Date();
+      d.setDate(d.getDate() + days);
+      return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+    };
+    const nowMonth = () => new Date().getMonth();
+    const cityOf = (id) => CITY_BY_ID.get(Number(id)) || CITY_BY_ID.get(DEFAULT_CITY) || CITIES[0];
+    const kcFor = (crop, phase) => (!crop ? 1 : phase === 'ini' ? crop.kc[0] : phase === 'final' ? crop.kc[2] : crop.kc[1]);
+
+    function toast(msg, type = '') {
+      const el = $('#toast');
+      if (!el) return;
+      el.textContent = msg;
+      el.className = 'toast show' + (type === 'error' ? ' error' : '');
+      clearTimeout(el._t);
+      el._t = setTimeout(() => { el.className = 'toast'; }, 2800);
+    }
+
+    function freshState() {
+      return {
+        activeCity: DEFAULT_CITY,
+        areas: [
+          { id: 1, name: 'Horta da Dona Zefa', city: 2211001, crop: 'alface', phase: 'prod', area: 0.2, system: 'gotejamento', soil: 'medio', flow: 4, lastIrrigation: isoOffset(-3) },
+          { id: 2, name: 'Roçado do Seu Antônio', city: 2211001, crop: 'milho', phase: 'prod', area: 1.2, system: 'aspersao', soil: 'arenoso', flow: 14, lastIrrigation: isoOffset(-4) },
+          { id: 3, name: 'Pomar de Manga', city: 2211001, crop: 'manga', phase: 'prod', area: 0.8, system: 'micro', soil: 'argiloso', flow: 6, lastIrrigation: isoOffset(-5) },
+        ],
+        history: [],
+        settings: { ...DEFAULT_SETTINGS },
+        nextId: 4,
+      };
+    }
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return freshState();
+        const parsed = JSON.parse(raw);
+        return { ...freshState(), ...parsed, settings: { ...DEFAULT_SETTINGS, ...(parsed.settings || {}) } };
+      } catch (e) { return freshState(); }
+    }
+
+    function saveState() {
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
+    }
+
+    let state = loadState();
+    let authUser = null;
+    try {
+      const savedAuth = JSON.parse(localStorage.getItem(AUTH_KEY) || 'null');
+      if (savedAuth && ACCOUNTS[savedAuth.username] && savedAuth.exp > Date.now()) {
+        authUser = ACCOUNTS[savedAuth.username];
+      }
+    } catch (e) {}
+
+    function applyAuth() {
+      const locked = !authUser;
+      $('#authScreen').hidden = !locked;
+      $('#authScreen').style.display = locked ? 'flex' : 'none';
+      $('#app').classList.toggle('auth-locked', locked);
+      $('#app').setAttribute('aria-hidden', locked ? 'true' : 'false');
+      $('#adminNavGroup').hidden = authUser?.role !== 'admin';
+      if (authUser) {
+        $('#userName').textContent = authUser.name;
+        $('#userRole').textContent = authUser.farm;
+        $('#userAvatar').textContent = authUser.name.slice(0, 1).toUpperCase();
+        $('#planCard').innerHTML = `<div class="plan-top"><strong>Plano Pro</strong><span>R$ 29,90/mês</span></div><div class="plan-sub">Até 20 ha · Sensores &amp; cálculo</div>`;
+      }
+    }
+
+    function analyzeArea(area) {
+      const city = cityOf(area.city);
+      const crop = CROP_BY_ID.get(area.crop) || CROPS[0];
+      const sys = SYSTEMS[area.system] || SYSTEMS.gotejamento;
+      const soil = SOILS[area.soil] || SOILS.medio;
+      const eto = Number(city.eto[nowMonth()] || 5);
+      const etc = eto * kcFor(crop, area.phase || 'prod');
+      const taw = (soil.fc - soil.pwp) * 10 * crop.raiz;
+      const days = Math.max(1, Math.round((Date.now() - new Date((area.lastIrrigation || todayISO()) + 'T12:00:00')) / 86400000));
+      const depletion = clamp((etc * days) / Math.max(1, taw), 0.08, 0.85);
+      const moisture = clamp(soil.fc - depletion * (soil.fc - soil.pwp), soil.pwp, soil.fc);
+      const irrigate = depletion >= 0.45;
+      const needMm = irrigate ? depletion * taw * 0.9 : 0;
+      const grossMm = needMm / sys.eff;
+      const volume = grossMm * 10 * Number(area.area || 0);
+      const hours = volume / Math.max(0.5, Number(area.flow || 6));
+      const cost = volume * sys.kwh * state.settings.tariff + hours * sys.labor * state.settings.labor;
+      const st = depletion >= 0.65
+        ? { label: 'Crítico', cls: 'red', rec: 'Irrigar agora' }
+        : depletion >= 0.45
+          ? { label: 'Atenção', cls: 'amber', rec: 'Irrigar hoje' }
+          : { label: 'Ideal', cls: 'green', rec: 'Aguardar' };
+      return { city, crop, sys, soil, eto, etc, moisture, irrigate, volume, hours, cost, status: st };
+    }
+
+    const ROUTES = {
+      overview: { title: 'Visão geral', eyebrow: 'Operação' },
+      calculator: { title: 'Calculadora', eyebrow: 'Operação' },
+      areas: { title: 'Minhas áreas', eyebrow: 'Operação' },
+      agenda: { title: 'Agenda', eyebrow: 'Operação' },
+      climate: { title: 'Clima & municípios', eyebrow: 'Análise' },
+      reports: { title: 'Relatórios', eyebrow: 'Análise' },
+      data: { title: 'Base de dados', eyebrow: 'Análise' },
+      admin: { title: 'Administração', eyebrow: 'Gestão' },
+    };
+    let activeRoute = 'overview';
+
+    function navigate(route) {
+      if (!ROUTES[route]) route = 'overview';
+      if (route === 'admin' && authUser?.role !== 'admin') route = 'overview';
+      activeRoute = route;
+      $$('.view').forEach((v) => v.classList.remove('active'));
+      $('#view-' + route)?.classList.add('active');
+      $$('.nav-btn').forEach((b) => b.classList.toggle('active', b.dataset.route === route));
+      $('#pageTitle').textContent = ROUTES[route].title;
+      $('#pageEyebrow').textContent = ROUTES[route].eyebrow;
+      $('#sidebar')?.classList.remove('open');
+      $('#sidebarBackdrop')?.classList.remove('open');
+      renderRoute(route);
+    }
+
+    function renderShell() {
+      const city = cityOf(state.activeCity);
