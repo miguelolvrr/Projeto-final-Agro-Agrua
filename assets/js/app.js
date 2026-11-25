@@ -46,6 +46,7 @@ const DEFAULT_SETTINGS = { tariff: 1.05, kwh: 0.15, source: 20, water: 0 };
 const STORAGE_KEY = 'agroagua_pi_v2';
 const WEATHER_KEY = 'agroagua_pi_weather_v2';
 const SESSION_KEY = 'agroagua_pi_admin_session';
+const USER_SESSION_KEY = 'agroagua_pi_user_session';
 const ADMIN_USER = 'admin';
 const ADMIN_PASS = '2026';
 const SESSION_MS = 8 * 60 * 60 * 1000;
@@ -85,7 +86,10 @@ const kcFor = (crop, phase) => {
   return crop.kc[1];
 };
 const phaseName = (p) => ({ ini: 'Inicial', cresc: 'Crescimento', prod: 'Produção', final: 'Final' }[p] || 'Produção');
-const cityOf = (id) => CITY_BY_ID.get(Number(id)) || CITY_BY_ID.get(DEFAULT_CITY) || CITIES[0] || { id: DEFAULT_CITY, nome: 'Teresina', pop: 866300, chuvaAnual: 1300, etoAnual: 1800, lat: -5.09, lon: -42.8, chuva: Array(12).fill(100), eto: Array(12).fill(5), t2m: Array(12).fill(28), deficit: 500 };
+const cityOf = (id) => CITY_BY_ID.get(Number(id)) || CITY_BY_ID.get(DEFAULT_CITY) || CITIES[0] || {
+  id: DEFAULT_CITY, nome: 'Teresina', pop: 866300, chuvaAnual: 1300, etoAnual: 1800,
+  lat: -5.09, lon: -42.8, chuva: Array(12).fill(100), eto: Array(12).fill(5), t2m: Array(12).fill(28), deficit: 500,
+};
 const nowMonth = () => new Date().getMonth();
 const findCity = (name) => CITIES.find((c) => norm(c.nome) === norm(name));
 
@@ -161,7 +165,12 @@ function seedDemo() {
   save();
 }
 
+/* ============================================================
+   Session / auth
+   ============================================================ */
 let session = null;
+let userSession = null;
+
 function loadSession() {
   try {
     const s = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null');
@@ -170,14 +179,57 @@ function loadSession() {
   } catch (e) {}
   return null;
 }
+function loadUserSession() {
+  try {
+    const s = JSON.parse(localStorage.getItem(USER_SESSION_KEY) || 'null');
+    if (s && s.exp > Date.now()) return s;
+    localStorage.removeItem(USER_SESSION_KEY);
+  } catch (e) {}
+  return null;
+}
 session = loadSession();
+userSession = loadUserSession();
 const isAdmin = () => !!session && session.exp > Date.now();
+const isLoggedIn = () => isAdmin() || (!!userSession && userSession.exp > Date.now());
+
+function applyAuthVisibility() {
+  const screen = $('#authScreen');
+  const appEl = $('#app');
+  if (isLoggedIn()) {
+    if (screen) screen.hidden = true;
+    if (appEl) {
+      appEl.classList.remove('auth-locked');
+      appEl.setAttribute('aria-hidden', 'false');
+    }
+  } else {
+    if (screen) screen.hidden = false;
+    if (appEl) {
+      appEl.classList.add('auth-locked');
+      appEl.setAttribute('aria-hidden', 'true');
+    }
+  }
+}
 
 function doLogin(user, pass) {
-  if (String(user).trim().toLowerCase() === ADMIN_USER && String(pass) === ADMIN_PASS) {
+  const u = String(user || '').trim().toLowerCase();
+  const p = String(pass || '');
+  if (u === ADMIN_USER && p === ADMIN_PASS) {
     session = { user: ADMIN_USER, exp: Date.now() + SESSION_MS };
-    try { localStorage.setItem(SESSION_KEY, JSON.stringify(session)); } catch (e) {}
+    userSession = { user: ADMIN_USER, role: 'Administrador', exp: Date.now() + SESSION_MS };
+    try {
+      localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+      localStorage.setItem(USER_SESSION_KEY, JSON.stringify(userSession));
+    } catch (e) {}
     log('login', 'Login administrativo realizado');
+    return true;
+  }
+  if ((u === 'agricultor' || u === 'produtor') && p === ADMIN_PASS) {
+    session = null;
+    userSession = { user: u, role: 'Agricultor', exp: Date.now() + SESSION_MS };
+    try {
+      localStorage.removeItem(SESSION_KEY);
+      localStorage.setItem(USER_SESSION_KEY, JSON.stringify(userSession));
+    } catch (e) {}
     return true;
   }
   return false;
@@ -185,9 +237,18 @@ function doLogin(user, pass) {
 function doLogout() {
   if (session) log('logout', 'Sessão administrativa encerrada');
   session = null;
-  try { localStorage.removeItem(SESSION_KEY); } catch (e) {}
+  userSession = null;
+  try {
+    localStorage.removeItem(SESSION_KEY);
+    localStorage.removeItem(USER_SESSION_KEY);
+  } catch (e) {}
+  applyAuthVisibility();
+  renderShell();
 }
 
+/* ============================================================
+   Weather
+   ============================================================ */
 let weather = {};
 try { weather = JSON.parse(localStorage.getItem(WEATHER_KEY) || '{}') || {}; } catch (e) { weather = {}; }
 const weatherPromises = {};
@@ -289,6 +350,9 @@ function forecastFor(cityId) {
   return out;
 }
 
+/* ============================================================
+   Calculation engine
+   ============================================================ */
 function compute(p) {
   const crop = CROP_BY_ID.get(p.crop) || CROPS[2];
   const eff = SYSTEMS[p.system]?.eff ?? 0.9;
@@ -331,6 +395,9 @@ function areaForDay(area, day) {
   });
 }
 
+/* ============================================================
+   Router & views
+   ============================================================ */
 const ROUTES = {
   automation: { title: 'Automação ESP32', eyebrow: 'Operação' },
   overview: { title: 'Visão geral', eyebrow: 'Operação' },
@@ -406,7 +473,7 @@ function renderAutomationEmbed() {
   if (!frame) return;
   const lang = document.documentElement.lang && document.documentElement.lang.startsWith('zh') ? 'zh' : 'pt';
   const target = 'automacao-esp32.html?embed=1&lang=' + lang;
-  if (!frame.getAttribute('src')) frame.setAttribute('src', target);
+  if (frame.getAttribute('src') !== target) frame.setAttribute('src', target);
 }
 
 function renderShell() {
@@ -430,8 +497,8 @@ function renderShell() {
     }
   }
   if ($('#userAvatar')) $('#userAvatar').innerHTML = isAdmin() ? 'A' : '<svg><use href="#i-user"/></svg>';
-  if ($('#userRole')) $('#userRole').textContent = isAdmin() ? 'Administrador' : 'Acesso';
-  if ($('#userName')) $('#userName').textContent = isAdmin() ? 'admin' : 'Entrar';
+  if ($('#userRole')) $('#userRole').textContent = isAdmin() ? 'Administrador' : (userSession?.role || 'Acesso');
+  if ($('#userName')) $('#userName').textContent = isAdmin() ? 'admin' : (userSession?.user || 'Entrar');
   if ($('#adminLock')) {
     $('#adminLock').innerHTML = '<svg><use href="#i-lock"/></svg>';
     $('#adminLock').closest('.nav-btn')?.classList.toggle('admin-on', isAdmin());
@@ -457,7 +524,6 @@ function renderOverview() {
   const savedPct = design > 0 ? ((design - current) / design) * 100 : 0;
 
   if ($('#ovSub')) $('#ovSub').textContent = city.nome + ' · ' + areas.length + ' áreas · ' + fmt(totalHa, 1) + ' ha monitorados';
-
   if ($('#ovKpis')) {
     $('#ovKpis').innerHTML = [
       kpi('Áreas', areas.length, totalHa.toFixed(1) + ' ha', 'layers', 'brand'),
@@ -467,7 +533,6 @@ function renderOverview() {
       kpi('Fonte de água', fmt(source, 0), 'm³/dia', 'map', demand > source ? 'bad' : 'good'),
     ].join('');
   }
-
   renderDemoNotice();
   renderWater(rows, demand, source, todayDemand);
   renderOverviewWeather(city);
@@ -623,6 +688,9 @@ function renderOverviewAreas(rows) {
     }).join('')}</tbody></table></div>`;
 }
 
+/* ============================================================
+   Wizard / calculadora
+   ============================================================ */
 let wizard = null;
 
 function newDraft() {
@@ -947,6 +1015,52 @@ function closeSidebar() {
 }
 
 function bindEvents() {
+  const authForm = $('#authForm');
+  if (authForm && !authForm.dataset.appAuthBound) {
+    authForm.dataset.appAuthBound = '1';
+    authForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const u = $('#authUser')?.value ?? '';
+      const p = $('#authPass')?.value ?? '';
+      const err = $('#authError');
+      if (doLogin(u, p)) {
+        if (err) err.classList.remove('show');
+        applyAuthVisibility();
+        renderShell();
+        navigate(activeRoute, true);
+      } else if (err) {
+        err.classList.add('show');
+      }
+    });
+  }
+
+  $$('[data-demo-user]').forEach((btn) => {
+    if (btn.dataset.appDemoBound) return;
+    btn.dataset.appDemoBound = '1';
+    btn.addEventListener('click', () => {
+      const u = btn.dataset.demoUser;
+      if ($('#authUser')) $('#authUser').value = u;
+      if ($('#authPass')) $('#authPass').value = ADMIN_PASS;
+      $$('[data-demo-user]').forEach((b) => {
+        const sel = b === btn;
+        b.classList.toggle('selected', sel);
+        b.setAttribute('aria-pressed', String(sel));
+      });
+    });
+  });
+
+  $('#authReveal')?.addEventListener('click', () => {
+    const passEl = $('#authPass');
+    if (!passEl) return;
+    const isPw = passEl.type === 'password';
+    passEl.type = isPw ? 'text' : 'password';
+    $('#authReveal')?.setAttribute('aria-pressed', String(isPw));
+  });
+
+  $('#logoutBtn')?.addEventListener('click', () => {
+    doLogout();
+  });
+
   document.addEventListener('click', (e) => {
     const routeBtn = e.target.closest('[data-route]');
     if (routeBtn) {
@@ -1068,6 +1182,7 @@ function bindEvents() {
     seedDemo();
   }
   bindEvents();
+  applyAuthVisibility();
   renderShell();
   const initialRoute = ROUTES[location.hash.replace(/^#/, '')] ? location.hash.replace(/^#/, '') : 'overview';
   navigate(initialRoute, true);
