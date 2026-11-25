@@ -1,95 +1,541 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>AgroÁgua — Irrigação de precisão</title>
-<meta name="description" content="SaaS de irrigação de precisão para pequenos e médios produtores: sensores de solo, recomendação de irrigação e melhor custo-benefício por cultura.">
-<link rel="icon" href="data:,">
-<link rel="stylesheet" href="/assets/css/app.css">
-<link rel="stylesheet" href="/assets/css/saas.css">
-<link rel="stylesheet" href="/assets/css/agroia.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AgroÁgua Piauí — Irrigação Inteligente</title>
+  <link rel="stylesheet" href="/assets/css/style.css" />
+  <style>
+    .auth-locked {
+      display: none !important;
+    }
+    .view {
+      display: none;
+    }
+    .view.active {
+      display: block;
+    }
+    .toast {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      z-index: 9999;
+      padding: 10px 14px;
+      border-radius: 10px;
+      background: #14532d;
+      color: #fff;
+      font-size: 14px;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(8px);
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .toast.error {
+      background: #991b1b;
+    }
+    .step-pane {
+      display: none;
+    }
+    .step-pane.active {
+      display: block;
+    }
+    #authError {
+      display: none;
+    }
+    #authError.show {
+      display: block;
+    }
+    #registerError {
+      display: none;
+    }
+    #registerError.show {
+      display: block;
+    }
+  </style>
 </head>
 <body>
-
-<div id="toast" class="toast" role="status" aria-live="polite"></div>
-
-<section class="auth-screen" id="authScreen" aria-labelledby="authTitle">
-  <div class="auth-orbit auth-orbit-one"></div>
-  <div class="auth-orbit auth-orbit-two"></div>
-  <div class="auth-layout">
-    <aside class="auth-story">
-      <a class="auth-brand" href="#" aria-label="AgroÁgua">
-        <span class="auth-brand-mark"><svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><path d="M24 5c7.8 9.1 13 15.8 13 23a13 13 0 1 1-26 0C11 20.8 16.2 14.1 24 5Z" fill="currentColor"/><path d="M18.5 29.5c.7 3.1 2.7 5 5.5 5.5" stroke="#0b4938" stroke-width="2.2" stroke-linecap="round"/></svg></span>
-        <span>AgroÁgua<small>Piauí · irrigação inteligente</small></span>
-      </a>
-      <div class="auth-story-copy">
-        <span class="auth-kicker"><i></i><span data-i18n="Tecnologia feita para o campo">Tecnologia feita para o campo</span></span>
-        <h2 data-i18n="Cada gota no momento certo.">Cada gota no momento certo.</h2>
-        <p data-i18n="Acompanhe sua lavoura, entenda a umidade do solo e planeje a irrigação com mais confiança.">Acompanhe sua lavoura, entenda a umidade do solo e planeje a irrigação com mais confiança.</p>
+  <!-- Tela de Login / Cadastro -->
+  <section id="authScreen" class="auth-screen">
+    <div class="auth-wrap">
+      <div class="auth-brand-panel">
+        <div>
+          <span class="auth-badge">AgroÁgua Piauí</span>
+          <h1>Cada gota no momento certo.</h1>
+          <p>Acompanhe suas áreas, estime a demanda hídrica e planeje a irrigação com mais segurança.</p>
+        </div>
+        <div class="auth-footer-note">224 municípios do Piauí · Clima, solo e manejo</div>
       </div>
-      <div class="auth-field-art" aria-hidden="true">
-        <div class="auth-sun"></div><div class="auth-hill auth-hill-back"></div><div class="auth-hill auth-hill-front"></div>
-        <div class="auth-row auth-row-a"></div><div class="auth-row auth-row-b"></div><div class="auth-row auth-row-c"></div>
-        <div class="auth-plant auth-plant-a"><i></i><b></b></div><div class="auth-plant auth-plant-b"><i></i><b></b></div><div class="auth-plant auth-plant-c"><i></i><b></b></div>
-        <span class="auth-water auth-water-a"></span><span class="auth-water auth-water-b"></span><span class="auth-water auth-water-c"></span>
-      </div>
-      <div class="auth-story-foot"><span data-i18n="Clima, solo e manejo em um só lugar.">Clima, solo e manejo em um só lugar.</span><span>224 municípios do Piauí</span></div>
-    </aside>
 
-    <main class="auth-main">
-      <button class="auth-language" id="authLangBtn" type="button" aria-label="Mudar idioma">PT <span>·</span> 中文</button>
-      <div class="auth-card" id="authCard">
-        <div class="auth-mobile-brand"><span class="auth-brand-mark"><svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><path d="M24 5c7.8 9.1 13 15.8 13 23a13 13 0 1 1-26 0C11 20.8 16.2 14.1 24 5Z" fill="currentColor"/></svg></span><span>AgroÁgua</span></div>
-        <div class="auth-heading">
-          <span class="auth-eyebrow" data-i18n="BEM-VINDO AO AGROÁGUA">BEM-VINDO AO AGROÁGUA</span>
-          <h1 id="authTitle" data-i18n="Entre na sua conta">Entre na sua conta</h1>
-          <p data-i18n="Escolha um perfil de demonstração ou informe seu acesso.">Escolha um perfil de demonstração ou informe seu acesso.</p>
+      <div class="auth-form-panel">
+        <div class="flex justify-end mb-3">
+          <button type="button" id="authLangBtn" class="btn btn-secondary btn-sm">PT</button>
         </div>
 
-        <div class="auth-demo-label"><span data-i18n="ACESSOS RÁPIDOS">ACESSOS RÁPIDOS</span><i></i></div>
-        <div class="auth-accounts" id="authAccounts" role="group" aria-label="Perfis de acesso rápido">
-          <button class="auth-account selected" type="button" data-demo-user="admin" aria-pressed="true">
-            <span class="auth-account-icon admin-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4.5 6v5.5c0 4.5 3.2 7.8 7.5 9.5 4.3-1.7 7.5-5 7.5-9.5V6L12 3Z"/><path d="m9 12 2 2 4-4"/></svg></span>
-            <span class="auth-account-info"><strong data-i18n="Administrador">Administrador</strong><small><span data-i18n="Usuário">Usuário</span> <b>admin</b> <span class="auth-credential-dot">·</span> <span data-i18n="Senha">Senha</span> <b>2026</b></small></span>
-            <span class="auth-radio"></span>
-          </button>
-          <button class="auth-account" type="button" data-demo-user="agricultor" aria-pressed="false">
-            <span class="auth-account-icon farmer-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 4c-8 .2-13 3.8-13 10a6 6 0 0 0 6 6c6.2 0 9.8-5 10-13l-3 3"/><path d="M4 21c2-4 5-7 10-10"/></svg></span>
-            <span class="auth-account-info"><strong data-i18n="Agricultor">Agricultor</strong><small><span data-i18n="Usuário">Usuário</span> <b>agricultor</b> <span class="auth-credential-dot">·</span> <span data-i18n="Senha">Senha</span> <b>2026</b></small></span>
-            <span class="auth-radio"></span>
-          </button>
-        </div>
+        <div id="authCard" class="auth-card">
+          <h2>Entre na sua conta</h2>
+          <p class="small muted">Escolha um perfil de demonstração ou informe seu acesso.</p>
 
-        <form id="authForm" class="auth-form" novalidate>
-          <div class="auth-error" id="authError" role="alert" aria-live="polite" data-i18n="Usuário ou senha inválidos. Confira os dados e tente novamente.">Usuário ou senha inválidos. Confira os dados e tente novamente.</div>
-          <label for="authUser" data-i18n="Usuário">Usuário</label>
-          <div class="auth-input-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/></svg><input id="authUser" name="username" type="text" value="admin" autocomplete="username" spellcheck="false" required></div>
-          <div class="auth-password-label"><label for="authPass" data-i18n="Senha">Senha</label><span data-i18n="Acesso de demonstração">Acesso de demonstração</span></div>
-          <div class="auth-input-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2.5"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><input id="authPass" name="password" type="password" value="2026" autocomplete="current-password" required><button class="auth-reveal" id="authReveal" type="button" aria-label="Mostrar senha" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 12s3.3-6 9.5-6 9.5 6 9.5 6-3.3 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.5"/></svg></button></div>
-          <button class="auth-submit" type="submit"><span data-i18n="Entrar no painel">Entrar no painel</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h15m0 0-6-6m6 6-6 6"/></svg></button>
-        </form>
-
-        <div class="auth-security"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2.5"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><span data-i18n="Demonstração local. Os acessos ficam salvos apenas neste navegador.">Demonstração local. Os acessos ficam salvos apenas neste navegador.</span></div>
-        <button class="auth-register-link" id="showRegisterBtn" type="button"><span data-i18n="Não tem conta?">Não tem conta?</span> <strong data-i18n="Cadastre sua fazenda">Cadastre sua fazenda</strong><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h15m0 0-6-6m6 6-6 6"/></svg></button>
-      </div>
-      <div class="auth-registration" id="authRegistration" hidden>
-        <button class="auth-back" id="backToLogin" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12H5m0 0 6 6m-6-6 6-6"/></svg><span data-i18n="Voltar ao login">Voltar ao login</span></button>
-        <div class="auth-heading register-heading"><span class="auth-eyebrow" data-i18n="CADASTRO DO AGRICULTOR">CADASTRO DO AGRICULTOR</span><h1 data-i18n="Cadastre sua fazenda">Cadastre sua fazenda</h1><p data-i18n="Crie seu acesso e informe onde ficam suas plantações.">Crie seu acesso e informe onde ficam suas plantações.</p></div>
-        <form id="registerForm" class="register-form" novalidate>
-          <div class="auth-error" id="registerError" role="alert" aria-live="polite"></div>
-          <div class="register-grid">
-            <div class="register-field register-wide"><label for="registerName" data-i18n="Seu nome">Seu nome</label><input id="registerName" type="text" autocomplete="name" maxlength="80" required></div>
-            <div class="register-field"><label for="registerFarm" data-i18n="Nome da fazenda">Nome da fazenda</label><input id="registerFarm" type="text" maxlength="80" placeholder="Ex.: Sítio Boa Vista" data-i18n-placeholder="Ex.: Sítio Boa Vista" required></div>
-            <div class="register-field"><label for="registerCity" data-i18n="Município">Município</label><select id="registerCity" required></select></div>
-            <div class="register-field register-wide"><label for="registerCommunity"><span data-i18n="Povoado ou comunidade">Povoado ou comunidade</span> <small data-i18n="opcional">opcional</small></label><input id="registerCommunity" type="text" maxlength="80" placeholder="Ex.: Povoado Lagoa Nova" data-i18n-placeholder="Ex.: Povoado Lagoa Nova"></div>
-            <div class="register-field register-wide"><label for="registerTreatment" data-i18n="Forma de tratamento no painel">Forma de tratamento no painel</label><select id="registerTreatment"><option value="produtor(a)" selected data-i18n="Produtor(a)">Produtor(a)</option><option value="produtor" data-i18n="Produtor">Produtor</option><option value="produtora" data-i18n="Produtora">Produtora</option></select></div>
-            <div class="register-field"><label for="registerUsername" data-i18n="Crie um usuário">Crie um usuário</label><input id="registerUsername" type="text" autocomplete="username" minlength="3" maxlength="24" spellcheck="false" placeholder="Ex.: maria.silva" data-i18n-placeholder="Ex.: maria.silva" required></div>
-            <div class="register-field"><label for="registerPassword" data-i18n="Crie uma senha">Crie uma senha</label><input id="registerPassword" type="password" autocomplete="new-password" minlength="6" required></div>
+          <div id="authAccounts" class="auth-accounts mt-3">
+            <button type="button" class="auth-account selected" data-demo-user="admin" aria-pressed="true">
+              <span class="auth-account-info">
+                <strong>Administrador</strong>
+                <small>admin · 2026</small>
+              </span>
+              <span class="auth-radio"></span>
+            </button>
+            <button type="button" class="auth-account" data-demo-user="agricultor" aria-pressed="false">
+              <span class="auth-account-info">
+                <strong>Agricultor</strong>
+                <small>agricultor · 2026</small>
+              </span>
+              <span class="auth-radio"></span>
+            </button>
           </div>
 
-          <div class="register-plantings-head"><div><h2 data-i18n="Suas plantações">Suas plantações</h2><p data-i18n="Adicione cada cultivo que deseja acompanhar.">Adicione cada cultivo que deseja acompanhar.</p></div><button class="register-add" id="addPlanting" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span data-i18n="Adicionar">Adicionar</span></button></div>
-          <div class="register-planting-list" id="registerPlantings"></div>
-          <button class="auth-submit register-submit" type="submit"><span data-i18n="Criar conta e acessar">Criar conta e acessar</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h15m0 0-6-6m6 6-6 6"/></svg></button>
-        </form>
-        <div class="auth-security"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2.5"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><span data-i18
+          <form id="authForm" class="space-y-3 mt-4">
+            <div>
+              <label for="authUser" class="block small mb-1">Usuário</label>
+              <input id="authUser" type="text" value="admin" autocomplete="username" required />
+            </div>
+            <div>
+              <label for="authPass" class="block small mb-1">Senha</label>
+              <div class="flex gap-2">
+                <input id="authPass" type="password" value="2026" autocomplete="current-password" required />
+                <button type="button" id="authReveal" class="btn btn-secondary btn-sm" aria-pressed="false">Ver</button>
+              </div>
+            </div>
+            <div id="authError" class="alert danger small">Usuário ou senha inválidos.</div>
+            <button type="submit" class="btn btn-primary w-full">Entrar no painel →</button>
+          </form>
+
+          <div class="mt-4 small">
+            Não tem conta?
+            <button type="button" id="showRegisterBtn" class="btn-link">Cadastre sua fazenda →</button>
+          </div>
+        </div>
+
+        <div id="authRegistration" class="auth-card" hidden>
+          <div class="flex items-center justify-between gap-2 mb-3">
+            <h2>Cadastro da fazenda</h2>
+            <button type="button" id="backToLogin" class="btn btn-secondary btn-sm">Voltar ao login</button>
+          </div>
+
+          <form id="registerForm" class="space-y-3">
+            <div>
+              <label for="registerName" class="block small mb-1">Seu nome</label>
+              <input id="registerName" type="text" required />
+            </div>
+            <div>
+              <label for="registerFarm" class="block small mb-1">Nome da fazenda / propriedade</label>
+              <input id="registerFarm" type="text" required />
+            </div>
+            <div class="grid g2">
+              <div>
+                <label for="registerTreatment" class="block small mb-1">Tratamento</label>
+                <select id="registerTreatment">
+                  <option value="produtor(a)">Produtor(a)</option>
+                  <option value="produtor">Produtor</option>
+                  <option value="produtora">Produtora</option>
+                </select>
+              </div>
+              <div>
+                <label for="registerCity" class="block small mb-1">Município</label>
+                <select id="registerCity" required></select>
+              </div>
+            </div>
+            <div>
+              <label for="registerCommunity" class="block small mb-1">Comunidade / localidade</label>
+              <input id="registerCommunity" type="text" />
+            </div>
+            <div class="grid g2">
+              <div>
+                <label for="registerUsername" class="block small mb-1">Usuário</label>
+                <input id="registerUsername" type="text" required />
+              </div>
+              <div>
+                <label for="registerPassword" class="block small mb-1">Senha (mín. 6 caracteres)</label>
+                <input id="registerPassword" type="password" minlength="6" required />
+              </div>
+            </div>
+
+            <div class="space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="small"><strong>Plantações iniciais</strong></span>
+                <button type="button" id="addPlanting" class="btn btn-secondary btn-sm">+ Adicionar plantação</button>
+              </div>
+              <div id="registerPlantings" class="space-y-2"></div>
+            </div>
+
+            <div id="registerError" class="alert danger small"></div>
+            <button type="submit" class="btn btn-primary w-full">Criar conta e entrar</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Aplicação principal -->
+  <div id="app" class="app auth-locked" aria-hidden="true">
+    <div id="sidebarBackdrop" class="sidebar-backdrop"></div>
+
+    <aside id="sidebar" class="sidebar">
+      <div class="side-top">
+        <strong>AgroÁgua</strong>
+        <span id="sideCityName" class="small muted">Teresina</span>
+        <div id="sideCityMeta" class="tiny muted">PI · —</div>
+      </div>
+
+      <nav class="side-nav">
+        <button type="button" class="nav-btn active" data-route="overview">
+          <span>Visão geral</span>
+        </button>
+        <button type="button" class="nav-btn" data-route="calculator">
+          <span>Calculadora</span>
+        </button>
+        <button type="button" class="nav-btn" data-route="areas">
+          <span>Minhas áreas</span>
+          <span id="navAreasCount" class="badge">0</span>
+        </button>
+        <button type="button" class="nav-btn" data-route="agenda">
+          <span>Agenda</span>
+        </button>
+        <button type="button" class="nav-btn" data-route="climate">
+          <span>Clima &amp; municípios</span>
+        </button>
+        <button type="button" class="nav-btn" data-route="reports">
+          <span>Relatórios</span>
+        </button>
+        <button type="button" class="nav-btn" data-route="data">
+          <span>Base de dados</span>
+        </button>
+        <button type="button" class="nav-btn" data-route="automation">
+          <span>Automação ESP32</span>
+        </button>
+        <div id="adminNavGroup" hidden>
+          <button type="button" class="nav-btn" data-route="admin">
+            <span>Administração</span>
+          </button>
+        </div>
+      </nav>
+
+      <div id="planCard" class="plan-card"></div>
+
+      <div class="side-footer">
+        <div class="flex items-center gap-2">
+          <div id="userAvatar" class="avatar">A</div>
+          <div>
+            <div id="userName" class="small"><strong>Usuário</strong></div>
+            <div id="userRole" class="tiny muted">Acesso</div>
+          </div>
+        </div>
+        <button type="button" id="logoutBtn" class="btn btn-secondary btn-sm mt-2 w-full">Sair</button>
+      </div>
+    </aside>
+
+    <div class="main-shell">
+      <header class="topbar">
+        <div class="flex items-center gap-3">
+          <button type="button" id="menuBtn" class="btn btn-secondary btn-sm">Menu</button>
+          <div>
+            <div id="pageEyebrow" class="tiny muted">Operação</div>
+            <h1 id="pageTitle" class="page-title">Visão geral</h1>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2 flex-wrap">
+          <button type="button" id="cityBtn" class="btn btn-secondary btn-sm" data-route="climate">
+            <span id="cityBtnName">Teresina</span>
+          </button>
+          <div id="weatherPill" class="weather-pill">
+            <span id="weatherLabel">Clima médio</span>
+            <strong id="weatherTemp">28°C</strong>
+          </div>
+          <button type="button" id="refreshSensors" class="btn btn-secondary btn-sm">Atualizar</button>
+          <button type="button" id="langBtn" class="btn btn-secondary btn-sm">PT</button>
+        </div>
+      </header>
+
+      <main class="content">
+        <!-- Visão geral -->
+        <section id="view-overview" class="view active space-y-4">
+          <div class="flex items-center justify-between flex-wrap gap-2">
+            <p id="ovSub" class="small muted"></p>
+            <span id="ovDate" class="tiny muted"></span>
+          </div>
+
+          <div id="ovKpis" class="grid g5"></div>
+
+          <div class="grid g2">
+            <div class="card">
+              <div class="card-head">
+                <h2>Recomendação de irrigação</h2>
+              </div>
+              <div class="card-body space-y-3">
+                <div id="recHero"></div>
+                <div id="recList"></div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-head">
+                <h2 id="soilAreaName">Solo e umidade</h2>
+                <span id="soilStatus" class="badge">—</span>
+              </div>
+              <div class="card-body">
+                <div id="soilBody"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <h2>Previsão de 7 dias</h2>
+            </div>
+            <div class="card-body">
+              <div id="weatherStrip" class="weather-strip"></div>
+              <p id="weatherFoot" class="small muted mt-2"></p>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <h2>Resumo por área</h2>
+              <button type="button" class="btn btn-primary btn-sm" data-route="calculator">+ Nova área</button>
+            </div>
+            <div class="card-body">
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Área</th>
+                      <th>Cultura</th>
+                      <th>Sistema</th>
+                      <th class="t-right">Umidade</th>
+                      <th>Status</th>
+                      <th>Recomendação</th>
+                      <th class="t-right">Ação</th>
+                    </tr>
+                  </thead>
+                  <tbody id="areasBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Calculadora -->
+        <section id="view-calculator" class="view space-y-4">
+          <div class="card">
+            <div class="card-head">
+              <h2>Calculadora de irrigação</h2>
+              <span id="wizBadge" class="badge">Passo 1 de 4</span>
+            </div>
+            <div class="card-body space-y-4">
+              <div id="wizSteps" class="steps-bar flex gap-2 flex-wrap">
+                <span class="step active" data-step="1">1. Área e solo</span>
+                <span class="step" data-step="2">2. Cultura</span>
+                <span class="step" data-step="3">3. Sistema e clima</span>
+                <span class="step" data-step="4">4. Resultado</span>
+              </div>
+
+              <div class="step-pane active" data-step="1">
+                <div class="grid g2">
+                  <div>
+                    <label for="wName" class="block small mb-1">Nome da área</label>
+                    <input id="wName" type="text" placeholder="Ex.: Talhão Norte" />
+                  </div>
+                  <div>
+                    <label for="wCity" class="block small mb-1">Município</label>
+                    <input id="wCity" type="text" readonly />
+                    <small id="wCityHint" class="tiny muted"></small>
+                  </div>
+                  <div>
+                    <label for="wArea" class="block small mb-1">Área (ha)</label>
+                    <input id="wArea" type="number" step="0.01" min="0.01" />
+                  </div>
+                  <div>
+                    <label for="wFlow" class="block small mb-1">Vazão do sistema (m³/h)</label>
+                    <input id="wFlow" type="number" step="0.1" min="0.5" />
+                  </div>
+                  <div>
+                    <label for="wSource" class="block small mb-1">Capacidade da fonte (m³/dia)</label>
+                    <input id="wSource" type="number" step="1" min="1" />
+                  </div>
+                  <div>
+                    <label for="wSoil" class="block small mb-1">Tipo de solo</label>
+                    <select id="wSoil">
+                      <option value="arenoso">Arenoso</option>
+                      <option value="medio">Médio</option>
+                      <option value="argiloso">Argiloso</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div class="step-pane" data-step="2">
+                <div class="grid g2 mb-3">
+                  <div>
+                    <label for="wCropSearch" class="block small mb-1">Buscar cultura</label>
+                    <input id="wCropSearch" type="text" placeholder="Ex.: tomate, milho, manga..." />
+                  </div>
+                  <div>
+                    <label for="wPhase" class="block small mb-1">Fase fenológica</label>
+                    <select id="wPhase">
+                      <option value="ini">Inicial</option>
+                      <option value="cresc">Crescimento</option>
+                      <option value="prod">Produção</option>
+                      <option value="final">Final</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label for="wPlanting" class="block small mb-1">Data do plantio</label>
+                    <input id="wPlanting" type="date" />
+                  </div>
+                  <div>
+                    <label for="wKc" class="block small mb-1">Kc atual</label>
+                    <input id="wKc" type="text" readonly />
+                  </div>
+                </div>
+                <div id="wCropGrid" class="grid g3"></div>
+              </div>
+
+              <div class="step-pane" data-step="3">
+                <div id="wSysGrid" class="grid g2 mb-3"></div>
+                <div class="grid g3">
+                  <div>
+                    <label for="wEto" class="block small mb-1">ETo (mm/dia)</label>
+                    <input id="wEto" type="number" step="0.1" min="0.2" />
+                  </div>
+                  <div>
+                    <label for="wRain" class="block small mb-1">Chuva (mm)</label>
+                    <input id="wRain" type="number" step="0.1" min="0" />
+                  </div>
+                  <div>
+                    <label for="wTariff" class="block small mb-1">Tarifa energia (R$/kWh)</label>
+                    <input id="wTariff" type="number" step="0.01" min="0" />
+                  </div>
+                </div>
+              </div>
+
+              <div class="step-pane" data-step="4">
+                <div id="wResult"></div>
+              </div>
+
+              <div class="flex items-center justify-between pt-2">
+                <button type="button" id="wizBack" class="btn btn-secondary">← Voltar</button>
+                <button type="button" id="wizNext" class="btn btn-primary">Próximo →</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <h2>Resumo da simulação</h2>
+            </div>
+            <div id="wSummary" class="card-body"></div>
+          </div>
+        </section>
+
+        <!-- Minhas áreas -->
+        <section id="view-areas" class="view space-y-4">
+          <div class="flex items-center justify-between">
+            <h2>Minhas áreas</h2>
+            <button type="button" class="btn btn-primary btn-sm" data-route="calculator">+ Adicionar área</button>
+          </div>
+          <div id="areasList"></div>
+        </section>
+
+        <!-- Agenda -->
+        <section id="view-agenda" class="view space-y-4">
+          <div class="card">
+            <div class="card-head">
+              <h2>Agenda de 7 dias</h2>
+            </div>
+            <div id="agendaBody" class="card-body"></div>
+          </div>
+        </section>
+
+        <!-- Clima & municípios -->
+        <section id="view-climate" class="view space-y-4">
+          <div class="card">
+            <div class="card-head">
+              <h2>Clima &amp; municípios do Piauí</h2>
+              <input id="citySearch" type="search" placeholder="Buscar município..." />
+            </div>
+            <div class="card-body">
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Município</th>
+                      <th class="t-right">População</th>
+                      <th class="t-right">Chuva anual</th>
+                      <th class="t-right">ETo anual</th>
+                      <th class="t-right">Ação</th>
+                    </tr>
+                  </thead>
+                  <tbody id="citiesBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Relatórios -->
+        <section id="view-reports" class="view space-y-4">
+          <div class="card">
+            <div class="card-head">
+              <h2>Histórico de irrigações</h2>
+            </div>
+            <div id="reportHistory" class="card-body"></div>
+          </div>
+        </section>
+
+        <!-- Base de dados -->
+        <section id="view-data" class="view space-y-4">
+          <div class="card">
+            <div class="card-head">
+              <h2>Base de dados</h2>
+            </div>
+            <div id="dataSummary" class="card-body"></div>
+          </div>
+        </section>
+
+        <!-- Automação ESP32 -->
+        <section id="view-automation" class="view space-y-4">
+          <div class="card">
+            <div class="card-head">
+              <h2>Automação ESP32</h2>
+            </div>
+            <div class="card-body">
+              <iframe id="automationFrame" title="Automação ESP32" style="width:100%;min-height:720px;border:0;border-radius:12px;"></iframe>
+            </div>
+          </div>
+        </section>
+
+        <!-- Administração -->
+        <section id="view-admin" class="view space-y-4">
+          <div class="card">
+            <div class="card-head">
+              <h2>Administração</h2>
+            </div>
+            <div id="adminLog" class="card-body"></div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script src="/assets/js/municipios_pi.js"></script>
+  <script src="/assets/js/base_dados.js"></script>
+  <script src="/assets/js/i18n.js"></script>
+  <script src="/assets/js/agroia.js"></script>
+  <script src="/assets/js/saas.js"></script>
+</body>
+</html>
