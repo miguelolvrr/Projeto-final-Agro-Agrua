@@ -40,8 +40,8 @@ app.json.ensure_ascii = False
 def home():
     html_dir = PROJECT_ROOT / "html"
     if (html_dir / "index.html").exists():
-        return send_from_directory(html_dir, "index.html")
-    return send_from_directory(PROJECT_ROOT, "index.html")
+        return send_from_directory(html_dir, "index.html", mimetype="text/html")
+    return send_from_directory(PROJECT_ROOT, "index.html", mimetype="text/html")
 
 
 @app.get("/api/health")
@@ -58,7 +58,7 @@ def health():
 @app.post("/api/chat")
 def chat():
     """Envia a conversa ao Groq, mantendo a chave no servidor."""
-    payload = request.get_json()
+    payload = request.get_json(silent=True)
     if not isinstance(payload, dict):
         return jsonify(error="Envie um objeto JSON com o campo message."), 400
 
@@ -114,7 +114,7 @@ def chat():
                 "max_tokens": 600,
                 "temperature": 0.7,
             },
-            timeout=(10, 35),
+            timeout=(5, 20),
         )
         if response.status_code == 429:
             return (
@@ -168,8 +168,8 @@ def page(filename):
         abort(404)
     html_dir = PROJECT_ROOT / "html"
     if (html_dir / filename).exists():
-        return send_from_directory(html_dir, filename)
-    return send_from_directory(PROJECT_ROOT, filename)
+        return send_from_directory(html_dir, filename, mimetype="text/html")
+    return send_from_directory(PROJECT_ROOT, filename, mimetype="text/html")
 
 
 @app.get("/ativos/<path:filename>", defaults={"folder": "ativos"})
